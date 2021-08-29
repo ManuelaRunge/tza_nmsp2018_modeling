@@ -91,6 +91,8 @@ pplot <- ggplot(data = baselineDat) +
                       y = mean.val,
                       ymin = lower.ci.val,
                       ymax = upper.ci.val), col = prevcolsAdj[5]) +
+  geom_hline(yintercept = 0,color="white", linetype = "dashed") +
+  geom_hline(yintercept = 1,color="grey", linetype = "solid") +
   geom_hline(data = baselineDat, aes(yintercept = mean.val), linetype = "dashed") +
   geom_hline(yintercept = c(Inf)) +
   coord_flip() +

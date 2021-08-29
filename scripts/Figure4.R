@@ -1,15 +1,19 @@
-# Title     : TODO
-# Objective : TODO
-# Created by: mrung
-# Created on: 3/14/2021
-
 ## -----------------------------------------
 #### Figure 4 - IPTsc in high (and moderate) strata
 ## -----------------------------------------
 
+require(data.table)
+require(tidyverse)
+require(cowplot)
+
+library(spatstat)
+source(file.path("rlibrary", "f_spread.R"))
+source(file.path("rlibrary", "f_aggrDat.R"))
+
 theme_set(theme_cowplot())
 fig5cols <- c('#00B2EE', '#8DC63F', '#EE7600', '#C53F42', '#628A2C', '#C38B4B', '#614525', '#9D3234')
-
+simPop = 10000
+TwoCols<- c("deepskyblue2", "darkorange2")
 load(file.path("simdat", "AnalysisDat.RData"))
 
 ## IPT scenarios
@@ -183,7 +187,6 @@ fig6_new <- ggplot(data = testdat_long) +
   geom_hline(yintercept = c(20, 40, 60, 80), color = "grey") +
   geom_hline(yintercept = c(0)) +
   geom_boxplot(aes(x = IPTscplotlabel2, y = value, fill = variable), width = 0.7) +
-  customTheme_noAngle +
   scale_fill_manual(values = TwoCols) +
   facet_wrap(~outcome, nrow = 2) +
   theme(
@@ -196,12 +199,18 @@ fig6_new <- ggplot(data = testdat_long) +
   theme(legend.position = "right") +
   labs(y = "reduction (%)", fill = "", x = "", title = "")
 
-if (SAVE) {
-  ggsave("Figure4.png", plot = fig6_new, path = PaperFigureDir, width = 15, height = 8, device = "png")  ## previously saved Figure6_new
-  ggsave("Figure4.pdf", plot = fig6_new, path = PaperFigureDir, width = 15, height = 8, device = "pdf")  ## previously saved Figure6_new
-}
+
+  ggsave("Figure4.png", plot = fig6_new, path = file.path("figures"), width = 15, height = 8, device = "png")  ## previously saved Figure6_new
+  ggsave("Figure4.pdf", plot = fig6_new, path =  file.path("figures"), width = 15, height = 8, device = "pdf")  ## previously saved Figure6_new
+
 ## add plot with statistics
 #source("addStats_explore.R")
+table(testdat_long$variable)
+
+groupVars <- c("variable","outcome")
+testdat_long %>%
+  f_aggrDat(groupVars, "value")
+
 
 
 ### adjust labels
@@ -226,10 +235,9 @@ subdatAggrIPTsc <- subdat %>%
 
 
 ### Save excel files
-unlink(file.path(PaperFigureDir, "csv", paste0("Figure4.xlsx")))
-write.xlsx(testdat, file = file.path(PaperFigureDir, "csv", paste0("Figure4.xlsx")), sheetName = "pplotMain_line_2020")
-write.xlsx(testdat_long, file = file.path(PaperFigureDir, "csv", paste0("Figure4.xlsx")), sheetName = "pplotMain_box_2020")
-write.xlsx(subdatAggrStrat, file = file.path(PaperFigureDir, "csv", paste0("Figure4.xlsx")), sheetName = "pplotMain_aggrStrat", append = TRUE)
-write.xlsx(subdatAggr, file = file.path(PaperFigureDir, "csv", paste0("Figure4.xlsx")), sheetName = "pplotMain_aggr", append = TRUE)
-write.xlsx(subdatAggrIPTsc, file = file.path(PaperFigureDir, "csv", paste0("Figure4.xlsx")), sheetName = "pplotMain_IPTdiff", append = TRUE)
+fwrite(testdat, file = file.path( "figures", paste0("pplotMain_line_2020.csv")))
+fwrite(testdat_long, file = file.path( "figures", paste0("pplotMain_box_2020.csv")))
+fwrite(subdatAggrStrat, file = file.path( "figures", paste0("pplotMain_aggrStrat.csv")))
+fwrite(subdatAggr, file = file.path( "figures", paste0("pplotMain_aggr.csv")))
+fwrite(subdatAggrIPTsc, file = file.path( "figures", paste0("pplotMain_IPTdiff.csv")))
 
