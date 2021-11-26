@@ -1,17 +1,38 @@
-### ====================================
-### Custom objects frequently used
-### ====================================
-### Plot settings
+require(ggplot2)
+require(cowplot)
+require(scales)
+require(RColorBrewer)
 
-DateLabels1 <- c("'03", "'04", "'05", "'06", "'07", "'08", "'09", "'10", "'11", "'12", "'16")
-DateLabels2 <- c("2003", "'04", "'05", "'06", "'07", "'08", "'09", "'10", "'11", "'12", "'13", "'14", "'15", "2016")
+simPop <- 10000
+DistrictVersion <- "2018"
+MonitoringStart <- 2003
+MonitoringEnd <- 2022
+baselineYear <- 2016
+EvaluationStart <- 2017
+EvaluationEnd <- 2020
+EvaluationYears <- c((baselineYear + 1):EvaluationEnd)
+historicalYears <- c(MonitoringStart:2012)
 
 
-## positions
-pos <- position_dodge(width = 0.9)
+theme_set(theme_cowplot())
+options(scipen = 10000)
+point <- format_format(big.mark = "'", decimal.mark = ".", scientific = FALSE)
+strata_lbl <- c("very low", "moderate", "low", "high", "urban")
 
-### colours
+strategies_lbl <- c(
+  "Counterfactual",
+  "NMSP with maintained CM",
+  "NMSP with improved CM",
+  "Optimised for cost-effectiveness",
+  "Achieving NMSP target at lowest costs",
+  "potential SMMSP\n with MDA",
+  "potential SMMSP",
+  "SMMSP"
+)
 ## sequential
+fig5cols <- c('#00B2EE', '#8DC63F', '#EE7600', '#C53F42', '#628A2C', '#C38B4B', '#614525', '#9D3234')
+TwoCols<- c("deepskyblue2", "darkorange2")
+
 TwoCols_seq <- c("#fe9929", "#41b6c4")
 ThreeCols_seq <- c("#a1dab4", "#41b6c4", "#225ea8")
 FourCols_seq <- c("#fe9929", "#a1dab4", "#41b6c4", "#225ea8")
@@ -32,23 +53,6 @@ ThreeCols <- c("cornflowerblue", "firebrick2", "green4")
 FourCols <- c("#fe9929", "#a1dab4", "#41b6c4", "#225ea8")
 FourCols2 <- c("#ffffcc", "#a1dab4", "#41b6c4", "#225ea8")
 
-temp_FiveCols <- c(
-  "Counterfactual" = "green4",
-  "Optimised for cost-effectiveness" = "violetred1",
-  "NMSP with maintained CM" = "royalblue",
-  "NMSP with improved CM" = "mediumturquoise",
-  "Achieving NMSP target at lowest costs" = "darkgoldenrod2",
-  "SMMSP with MDA" = "red",
-  "SMMSP" = "red"
-)
-
-## ==============================
-##### COLOUR PALETTS AND LEGENDS
-## ==============================
-
-### PREVALENCE - RdYlGn
-PrevPalette <- colorRampPalette(rev(brewer.pal(11, "RdYlGn")))
-prevLegend <- scale_fill_gradientn(colours = PrevPalette(100), limits = c(0, 1), na.value = "lightgray")
 
 # prevcols 		<- c("#1A9850" ,"#91CF60", "#fee8c8", "#feb24c", "#e31a1c")
 prevcolsAdj <- c("darkorchid2", "#1A9850", "#91CF60", "gold2", "#e31a1c")
@@ -56,155 +60,68 @@ prevcols <- rev(brewer.pal(6, "RdYlGn")) #
 prevcols <- gsub("#D9EF8B", "#fee8c8", prevcols)
 prevLegend_cat <- scale_fill_manual(values = prevcols, drop = FALSE)
 
-## CASES I - RdYlGn
-### cases (absolute (limits and breaks not yet specified) --- white to darkblue? white to darkred? define later
-CasesPalette <- colorRampPalette(rev(brewer.pal(11, "RdYlGn")))
-CasesLegend <- scale_fill_gradientn(colours = CasesPalette(100), na.value = "lightgray")
-### cases percentage (limits 0,1) --- white to darkblue? white to darkred? define later
-CasesPalette <- colorRampPalette(rev(brewer.pal(11, "RdYlGn")))
-CasesLegend <- scale_fill_gradientn(colours = CasesPalette(100), limits = c(0, 1), na.value = "lightgray")
-
-## CASES II - YlOrBr
-Cases_pPcols <- (brewer.pal(6, "YlOrBr")) #
-Cases_pPcols_adj <- Cases_pPcols[2:6]
-Cases_pPcols_adj[1] <- "grey"
-Cases_pP_Legend_cat <- scale_fill_manual(values = Cases_pPcols_adj, drop = FALSE)
-
-## COSTS
-### costs (absolute (limits and breaks not yet specified) --- white to darkblue? white to darkred? define later
-CostPalette <- colorRampPalette(rev(brewer.pal(11, "RdYlGn")))
-CostLegend <- scale_fill_gradientn(colours = CostPalette(100), na.value = "lightgray")
-
-CostPercPalette <- colorRampPalette(rev(brewer.pal(11, "RdYlGn")))
-CostPercLegend <- scale_fill_gradientn(colours = CostPercPalette(100), limits = c(0, 1), na.value = "lightgray")
+StrataCols <- c("very low" = "#1A9850",
+                "low" = "#91CF60",
+                "urban" = "darkorchid2",
+                "moderate" = "gold2",
+                "high" = "#e31a1c")
 
 
-## Red to blue
-RedBluePalette <- colorRampPalette(rev(brewer.pal(11, "RdYlBu")))
-RedBlueLegend <- scale_fill_gradientn(colours = RedBluePalette(100), limits = c(0, 1), na.value = "lightgray")
-
-RedBluecols <- rev(brewer.pal(6, "RdYlBu")) #
-RedBlueLegend_cat <- scale_fill_manual(values = RedBluecols, drop = FALSE)
-
-
-## ==============================
-##### TEXT AND LABELS
-## ==============================
-
+## ==========================
+### SETTINGS
+## ==========================
 customTheme_noAngle <- theme(
-  strip.text.x = element_text(size = 24, face = "bold"),
-  strip.text.y = element_text(size = 24, face = "bold"),
-  plot.title = element_text(size = 24),
-  plot.subtitle = element_text(size = 20),
-  plot.caption = element_text(size = 18),
-  legend.title = element_text(size = 20),
-  legend.text = element_text(size = 20),
-  axis.title.x = element_text(size = 20),
-  axis.text.x = element_text(size = 20, angle = 0, hjust = 1),
-  axis.title.y = element_text(size = 20),
-  axis.text.y = element_text(size = 20)
-)
-
-customTheme_Angle <- theme(
-  strip.text.x = element_text(size = 24, face = "bold"),
-  strip.text.y = element_text(size = 24, face = "bold"),
-  plot.title = element_text(size = 24),
-  plot.subtitle = element_text(size = 20),
-  plot.caption = element_text(size = 18),
-  legend.title = element_text(size = 20),
-  legend.text = element_text(size = 20),
-  axis.title.x = element_text(size = 20),
-  axis.text.x = element_text(size = 20, angle = 90, hjust = 0, vjust = 0),
-  axis.title.y = element_text(size = 20),
-  axis.text.y = element_text(size = 20)
+  # strip.text.x = element_text(size = 16, face="plain"),
+  #  strip.text.y = element_text(size = 16, face="plain"),
+  panel.spacing.x = unit(1, "line"),
+  strip.placement = "outside",
+  strip.background = element_rect(colour = "white", fill = "white"),
+  strip.text.x = element_text(size = 14, face = "bold"),
+  strip.text.y = element_text(size = 14, face = "bold"),
+  plot.title = element_text(size = 20, hjust = 0),
+  plot.subtitle = element_text(size = 16),
+  plot.caption = element_text(size = 10),
+  legend.title = element_text(size = 16),
+  legend.text = element_text(size = 14),
+  axis.title.x = element_text(size = 16),
+  axis.text.x = element_text(size = 14, angle = 0),
+  axis.title.y = element_text(size = 16),
+  axis.text.y = element_text(size = 14)
 )
 
 customTheme_noAngle2 <- theme(
-  strip.text.x = element_text(size = 16, vjust = -1, hjust = 0),
-  strip.background = element_blank(),
-  plot.title = element_text(size = 20),
+  # strip.text.x = element_text(size = 16, face="plain"),
+  #  strip.text.y = element_text(size = 16, face="plain"),
+  panel.spacing.x = unit(1, "line"),
+  strip.placement = "outside",
+  strip.text.x = element_text(size = 14, face = "bold"),
+  strip.text.y = element_text(size = 14, face = "bold"),
+  plot.title = element_text(size = 20, hjust = 0),
   plot.subtitle = element_text(size = 16),
   plot.caption = element_text(size = 10),
-  legend.title = element_text(size = 18),
-  legend.text = element_text(size = 16),
-  axis.title.x = element_text(size = 18),
-  axis.text.x = element_text(size = 16, angle = 0, hjust = 0.5),
-  axis.title.y = element_text(size = 18),
-  axis.text.y = element_text(size = 16)
+  legend.title = element_text(size = 16),
+  legend.text = element_text(size = 14),
+  axis.title.x = element_text(size = 16),
+  axis.text.x = element_text(size = 14, angle = 0),
+  axis.title.y = element_text(size = 16),
+  axis.text.y = element_text(size = 14)
 )
 
-customTheme <- theme(
-  strip.text.x = element_text(size = 16, face = "bold"),
-  plot.title = element_text(size = 20, vjust = -1, hjust = 0),
+customTheme_Angle <- theme(
+  # strip.text.x = element_text(size = 16, face="plain"),
+  #  strip.text.y = element_text(size = 16, face="plain"),
+  panel.spacing.x = unit(1, "line"),
+  strip.placement = "outside",
+  strip.background = element_rect(colour = "black", fill = "white"),
+  strip.text.x = element_text(size = 14, face = "bold"),
+  strip.text.y = element_text(size = 14, face = "bold"),
+  plot.title = element_text(size = 20, hjust = 0),
   plot.subtitle = element_text(size = 16),
   plot.caption = element_text(size = 10),
-  legend.title = element_text(size = 18),
-  legend.text = element_text(size = 16),
-  axis.title.x = element_text(size = 18),
-  axis.text.x = element_text(size = 16),
-  axis.title.y = element_text(size = 18),
-  axis.text.y = element_text(size = 16)
-)
-
-customThemeNoFacet <- theme(
-  strip.text.x = element_text(size = 16, face = "bold"),
-  strip.background = element_blank(),
-  plot.title = element_text(size = 20, vjust = -1, hjust = 0),
-  plot.subtitle = element_text(size = 16),
-  plot.caption = element_text(size = 10),
-  legend.title = element_text(size = 18),
-  legend.text = element_text(size = 16),
-  axis.title.x = element_text(size = 18),
-  axis.text.x = element_text(size = 16),
-  axis.title.y = element_text(size = 18),
-  axis.text.y = element_text(size = 16)
-)
-
-customThemeNoFacet_angle <- theme(
-  strip.text.x = element_text(size = 16, face = "bold"),
-  strip.background = element_blank(),
-  plot.title = element_text(size = 20, vjust = -1, hjust = 0),
-  plot.subtitle = element_text(size = 16),
-  plot.caption = element_text(size = 10),
-  legend.title = element_text(size = 18),
-  legend.text = element_text(size = 16),
-  axis.title.x = element_text(size = 18),
-  axis.text.x = element_text(size = 16, angle = 45, hjust = 1),
-  axis.title.y = element_text(size = 18),
-  axis.text.y = element_text(size = 16)
-)
-
-## settings for map
-
-# map.theme =  theme(strip.text.x = element_text(size = 14,vjust=-1,hjust=0.5, face="bold"),
-# 				 strip.background 	= element_blank(),
-# 				 plot.title 		= element_text(size =14,vjust=-1,hjust=0.5),
-# 				 plot.caption 		= element_text(size =14),
-# 				 legend.title		= element_text(size =12),
-# 				 legend.text 		= element_text(size =12),
-#                #legend.key.size	= unit(2.5,"line"),
-# 				 legend.position	="right")
-
-## edited from https://rpubs.com/danielkirsch/styling-choropleth-maps  (works better than theme nothing)
-map.theme <- theme(
-  strip.text.x = element_text(size = 14, vjust = -1, hjust = 0.5, face = "bold"),
-  strip.text.y = element_text(size = 14, vjust = -1, hjust = 0.5, face = "bold"),
-  strip.background = element_blank(),
-  axis.line = element_blank(),
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(),
-  panel.border = element_blank(),
-  panel.background = element_blank(),
-  axis.text.x = element_blank(),
-  axis.title.x = element_blank(),
-  axis.ticks.x = element_blank(),
-  axis.title.y = element_blank(),
-  axis.text.y = element_blank(),
-  axis.ticks.y = element_blank(),
-  plot.title = element_text(size = 14, vjust = -1, hjust = 0.5),
-  plot.caption = element_text(size = 10),
-  legend.title = element_text(size = 12),
-  legend.text = element_text(size = 12),
-  # legend.key.size	= unit(2.5,"line"),
-  legend.position = "right"
+  legend.title = element_text(size = 16),
+  legend.text = element_text(size = 14),
+  axis.title.x = element_text(size = 16),
+  axis.text.x = element_text(size = 12, angle = 90),
+  axis.title.y = element_text(size = 16),
+  axis.text.y = element_text(size = 14)
 )

@@ -6,3 +6,5 @@ fig_old/
 figures/
 out/
 Shapefiles/
+*.pdf
+*.rds

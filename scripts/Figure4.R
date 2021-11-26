@@ -1,76 +1,26 @@
-## -----------------------------------------
-#### Figure 4 - IPTsc in high (and moderate) strata
-## -----------------------------------------
+## ===================================================================
+## Figure 4
+## ===================================================================
+library(data.table)
+library(tidyverse)
+library(spatstat) #weighted.median
 
-require(data.table)
-require(tidyverse)
-require(cowplot)
+source(file.path("rlibrary", "customObjects.R"))
+source(file.path("rlibrary", "f_AggrDat.R"))
 
-library(spatstat)
-source(file.path("rlibrary", "f_spread.R"))
-source(file.path("rlibrary", "f_aggrDat.R"))
-
-theme_set(theme_cowplot())
-fig5cols <- c('#00B2EE', '#8DC63F', '#EE7600', '#C53F42', '#628A2C', '#C38B4B', '#614525', '#9D3234')
-simPop = 10000
-TwoCols<- c("deepskyblue2", "darkorange2")
-load(file.path("simdat", "AnalysisDat.RData"))
+load(file.path("dat", "AnalysisDat.RData"))
 
 ## IPT scenarios
 IPTScinterventions <- AnalysisDat %>%
   dplyr::filter(
-    CMincrease == "@Access2016@" &
-      futITNcov == 0 &
-      futSNPcov == 0 &
-      futIRScov != 0 &
-      IPTcov == 0 &
-      FutureScenarios == "onlyCMandITN" |
-      CMincrease == "@Access2016@" &
-        futITNcov != 0 &
-        futSNPcov == 0 &
-        futIRScov == 0 &
-        IPTcov == 0 &
-        FutureScenarios == "onlyCMandITN" |
-      CMincrease == "@Access2016@" &
-        futITNcov == 0 &
-        futSNPcov != 0 &
-        futIRScov == 0 &
-        IPTcov == 0 &
-        FutureScenarios == "onlyCMandITN" |
-      CMincrease == "@Access2016@" &
-        futITNcov == 0 &
-        futSNPcov == 0 &
-        futIRScov != 0 &
-        IPTcov != 0 &
-        FutureScenarios == "onlyCMandITN" |
-      CMincrease == "@Access2016@" &
-        futITNcov != 0 &
-        futSNPcov == 0 &
-        futIRScov == 0 &
-        IPTcov != 0 &
-        FutureScenarios == "onlyCMandITN" |
-      CMincrease == "@Access2016@" &
-        futITNcov == 0 &
-        futSNPcov != 0 &
-        futIRScov == 0 &
-        IPTcov != 0 &
-        FutureScenarios == "onlyCMandITN" |
-      CMincrease == "@Access2016@" &
-        futITNcov != 0 &
-        futSNPcov != 0 &
-        futIRScov == 0 &
-        IPTcov != 0 &
-        FutureScenarios == "onlyCMandITN" |
-      CMincrease == "@Access2016@" &
-        futITNcov != 0 &
-        futSNPcov != 0 &
-        futIRScov == 0 &
-        IPTcov == 0 &
-        FutureScenarios == "onlyCMandITN"
+     (CMincrease == "@Access2016@" & futITNcov == 0 & futSNPcov == 0 & futIRScov != 0 & FutureScenarios == "onlyCMandITN") |
+     (CMincrease == "@Access2016@" & futITNcov != 0 & futSNPcov == 0 & futIRScov == 0 & FutureScenarios == "onlyCMandITN") |
+     (CMincrease == "@Access2016@" & futITNcov == 0 & futSNPcov != 0 & futIRScov == 0 & FutureScenarios == "onlyCMandITN") |
+     (CMincrease == "@Access2016@" & futITNcov != 0 & futSNPcov != 0 & futIRScov == 0 & FutureScenarios == "onlyCMandITN")
   ) %>%
   dplyr::select(FutScen) %>%
   unique()
-IPTScinterventions <- IPTScinterventions$FutScen
+(PTScinterventions <- IPTScinterventions$FutScen)
 
 #### Create IPTsc plot (in (moderate and) high stratum only)
 ### Get relevant future scenarios
@@ -93,7 +43,8 @@ AnalysisDat$Incidence <- (AnalysisDat$Cases / simPop) * 1000
 AnalysisDat$IPTscplotlabel <- paste0(AnalysisDat$futITNdep, " & ", AnalysisDat$futIRSlabel)
 AnalysisDat$IPTscplotlabel <- gsub(" and ", "\n+",
                                    gsub(" & ", "\n+",
-                                        gsub(" & no IRS", "", AnalysisDat$IPTscplotlabel)))
+                                        gsub(" & no IRS", "",
+                                             AnalysisDat$IPTscplotlabel)))
 
 AnalysisDat$IPTscplotlabel2 <- factor(AnalysisDat$IPTscplotlabel,
                                       levels = c("no ITN",
@@ -114,10 +65,8 @@ AnalysisDat$IPTscplotlabel2 <- factor(AnalysisDat$IPTscplotlabel,
                                                  "ITN mass-campaign\n+continuous\n+IRS")
 )
 
-table(AnalysisDat$IPTscplotlabel2)
-
 # FutNr <- selectedFutscenNr - !(District %in% missingIPTscDistricts),
-subdat <- AnalysisDat %>%
+AnalysisDat <- AnalysisDat %>%
   filter(Strata %in% c("moderate", "high") &
            year >= 2016 &
            year <= 2020 &
@@ -131,113 +80,78 @@ subdat <- AnalysisDat %>%
 ### not aggregated but using geom_smooth in plot (loess regression function)
 
 ### add n districts!!
-subdat$Strata_adj <- as.character(subdat$Strata)
-subdat$Strata_adj <- factor(subdat$Strata_adj,
-                            levels = c("moderate", "high"),
-                            labels = c("moderate\n(n=41)", "high\n(n=69)")
-)
-
-subdat$outcomen <- factor(subdat$outcome,
-                          levels = c("Incidence", "Cases.Pop", "Cases.pP", "PR"),
-                          labels = c(
-                            '"Incidence"', '"Total cases"',
-                            '"Cases per person"',
-                            'italic("PfPR")["2 to 10"]'
-                          )
+AnalysisDat$Strata_adj <- factor(AnalysisDat$Strata,
+                                 levels = c("moderate", "high"),
+                                 labels = c("moderate\n(n=41)", "high\n(n=69)")
 )
 
 
 ### Calculate difference between improved CM and not improved CM across the other interventions using data.table
-groupVars <- c("Strata", "District", "IPTscplotlabel", "year", "futCMlabel", "CMincrease", "outcome", "Strata_adj")
-subdat <- as.data.table(subdat, key = groupVars)
-
 ## IPTsc difference, regardless of CM
-subdat[, IPTscdiff := value[IPTcov == 0] - value[IPTcov == 0.8], by = groupVars]
-subdat[, IPTscdiff_perc := ((value[IPTcov == 0] - value[IPTcov == 0.8]) / value[IPTcov == 0]) * 100, by = groupVars]
-
+groupVars <- c("Strata", "District", "IPTscplotlabel", "year", "futCMlabel", "CMincrease", "outcome", "Strata_adj")
+AnalysisDat <- as.data.table(AnalysisDat, key = groupVars)
+AnalysisDat[, IPTscdiff := value[IPTcov == 0] - value[IPTcov == 0.8], by = groupVars]
+AnalysisDat[, IPTscdiff_perc := ((value[IPTcov == 0] - value[IPTcov == 0.8]) / value[IPTcov == 0]) * 100, by = groupVars]
 
 ### Calculate difference between IPTsc and no IPTsc across the other interventions using data.table
-groupVars <- c("Strata", "District", "IPTscplotlabel", "year", "IPTcov", "outcome", "Strata_adj")
-subdat <- as.data.table(subdat, key = groupVars)
-
 ## CM difference, regardless of IPTsc
-subdat[, CMdiff := value[futCMlabel == "current case management"] - value[futCMlabel != "current case management"], by = groupVars]
-subdat[, CMdiff_perc := ((value[futCMlabel == "current case management"] - value[futCMlabel != "current case management"]) / value[futCMlabel == "current case management"]) * 100, by = groupVars]
+groupVars <- c("Strata", "District", "IPTscplotlabel", "year", "IPTcov", "outcome", "Strata_adj")
+AnalysisDat <- as.data.table(AnalysisDat, key = groupVars)
+AnalysisDat[, CMdiff := value[futCMlabel == "current case management"] - value[futCMlabel != "current case management"], by = groupVars]
+AnalysisDat[, CMdiff_perc := ((value[futCMlabel == "current case management"] - value[futCMlabel != "current case management"]) / value[futCMlabel == "current case management"]) * 100, by = groupVars]
 
-### View calculated differences
-testdat <- subdat %>% filter(year == 2020)
-tapply(testdat$CMdiff, testdat$outcome, summary)
-tapply(testdat$IPTscdiff, testdat$outcome, summary)
-tapply(testdat$CMdiff_perc, testdat$outcome, summary)
-tapply(testdat$IPTscdiff_perc, testdat$outcome, summary)
+AnalysisDat <- AnalysisDat %>% filter(year == 2020)
 
 ### Wide to long format for plotting
-testdat_long <- testdat %>%
-  dplyr::select(IPTscplotlabel2, outcome, CMdiff_perc, IPTscdiff_perc) %>%
-  melt(id.vars = c("outcome", "IPTscplotlabel2"))
+AnalysisDat_long <- AnalysisDat %>%
+  dplyr::select(District, year, IPTscplotlabel2, outcome, CMdiff_perc, IPTscdiff_perc) %>%
+  pivot_longer(cols = -c(District, year, IPTscplotlabel2, outcome), names_to = 'variable')
 
-testdat_long$variable <- as.character(testdat_long$variable)
-testdat_long$variable[testdat_long$variable == "CMdiff_perc"] <- "improved CM"
-testdat_long$variable[testdat_long$variable == "IPTscdiff_perc"] <- "IPTsc"
-table(testdat_long$variable)
+AnalysisDat_long$variable[AnalysisDat_long$variable == "CMdiff_perc"] <- "improved CM"
+AnalysisDat_long$variable[AnalysisDat_long$variable == "IPTscdiff_perc"] <- "IPTsc"
+table(AnalysisDat_long$variable)
 
 ### Create plot
-fig6_new <- ggplot(data = testdat_long) +
-  theme_cowplot() +
+fig4 <- ggplot(data = AnalysisDat_long) +
   geom_hline(yintercept = c(20, 40, 60, 80), color = "grey") +
   geom_hline(yintercept = c(0)) +
   geom_boxplot(aes(x = IPTscplotlabel2, y = value, fill = variable), width = 0.7) +
   scale_fill_manual(values = TwoCols) +
   facet_wrap(~outcome, nrow = 2) +
-  theme(
-    strip.text.x = element_text(size = 16),
-    strip.text.y = element_text(size = 16),
-    strip.background = element_blank(),
-    plot.title = element_text(hjust = 0.5, vjust = 1)
-  ) +
+  theme(strip.text.x = element_text(size = 16),
+        strip.text.y = element_text(size = 16),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, vjust = 1)) +
   scale_y_continuous(lim = c(-20, 81), breaks = seq(0, 90, 20)) +
   theme(legend.position = "right") +
   labs(y = "reduction (%)", fill = "", x = "", title = "")
 
 
-  ggsave("Figure4.png", plot = fig6_new, path = file.path("figures"), width = 15, height = 8, device = "png")  ## previously saved Figure6_new
-  ggsave("Figure4.pdf", plot = fig6_new, path =  file.path("figures"), width = 15, height = 8, device = "pdf")  ## previously saved Figure6_new
+ggsave("Fig_4.png", plot = fig4, path = file.path("figures"), width = 15, height = 8, device = "png")  ## previously saved Figure6_new
+#ggsave("Fig_4.pdf", plot = fig6_new, path = file.path("figures"), width = 15, height = 8, device = "pdf")  ## previously saved Figure6_new
 
-## add plot with statistics
-#source("addStats_explore.R")
-table(testdat_long$variable)
+## For text
+AnalysisDat_long %>% f_aggrDat(groupVars = c("variable", "outcome"), valueVar = "value")
 
-groupVars <- c("variable","outcome")
-testdat_long %>%
-  f_aggrDat(groupVars, "value")
-
-
-
-### adjust labels
-#testdat$futCMlabel[testdat$futCMlabel == "current case management"] <- "+ IPTsc"
-#testdat$futCMlabel[testdat$futCMlabel == "85% treatment of cases"] <- "+ IPTsc\n+CM"
-### Aggregate data per strata and at national level for easier reporting of average estimates
-groupVars <- c("Strata", "IPTscplotlabel", "year", "FutScen_nr", "futCMlabel", "IPTcov", "CMincrease", "outcome", "Strata_adj")
-subdatAggrStrat <- subdat %>%
+groupVars <- c("Strata", "IPTscplotlabel", "year", "FutScen_nr", "futCMlabel", "IPTcov", "CMincrease", "outcome")
+subdatAggrStrat <- AnalysisDat %>%
   filter(!(outcome %in% c("Cases.Pop", "Cases.pP"))) %>%
   f_weighted.aggrDat(groupVars, "value", "Population_2016")
 
 groupVars <- c("IPTscplotlabel", "year", "FutScen_nr", "futCMlabel", "IPTcov", "CMincrease", "outcome")
-subdatAggr <- subdat %>%
+subdatAggr <- AnalysisDat %>%
   filter(!(outcome %in% c("Cases.Pop", "Cases.pP"))) %>%
   f_weighted.aggrDat(groupVars, "value", "Population_2016")
 
-
 groupVars <- c("IPTscplotlabel", "year", "futCMlabel", "CMincrease", "outcome")
-subdatAggrIPTsc <- subdat %>%
+subdatAggrIPTsc <- AnalysisDat %>%
   filter(!(outcome %in% c("Cases.pP"))) %>%
   f_weighted.aggrDat(groupVars, "IPTscdiff", "Population_2016")
 
 
-### Save excel files
-fwrite(testdat, file = file.path( "figures", paste0("pplotMain_line_2020.csv")))
-fwrite(testdat_long, file = file.path( "figures", paste0("pplotMain_box_2020.csv")))
-fwrite(subdatAggrStrat, file = file.path( "figures", paste0("pplotMain_aggrStrat.csv")))
-fwrite(subdatAggr, file = file.path( "figures", paste0("pplotMain_aggr.csv")))
-fwrite(subdatAggrIPTsc, file = file.path( "figures", paste0("pplotMain_IPTdiff.csv")))
+### Save datasetss
+fwrite(AnalysisDat_long, file = file.path("figures", 'figuredat', paste0("Fig4.csv")))
+fwrite(subdatAggrStrat, file = file.path("figures", 'figuredat', paste0("Fig4_pplotMain_aggrStrat.csv")))
+fwrite(subdatAggr, file = file.path("figures", 'figuredat', paste0("Fig4_pplotMain_aggr.csv")))
+fwrite(subdatAggrIPTsc, file = file.path("figures", 'figuredat', paste0("Fig4_pplotMain_IPTdiff.csv")))
 

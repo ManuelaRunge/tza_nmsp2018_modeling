@@ -1,5 +1,6 @@
-## To be included in main analysis script  (~Projects\OM_TZA\Scripts\ExperimentAnalysis\5_analysis.Rmd)
-## source(paste0(ScriptDir, "5.include_FittingPlots.R"))
+## ===================================================================
+## Figure 2
+## ===================================================================
 
 ## prepare data 
 ## combine observed and simulated data to one dataframe

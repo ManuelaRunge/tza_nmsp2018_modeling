@@ -1,25 +1,47 @@
+## ===================================================================
+## Figure 1, TZA map
+## ===================================================================
 library(tidyverse)
 library(raster)
+library(malariaAtlas) # better shp to spatial dataframe function
 
-theme_set(theme_cowplot())
-prevcolsAdj <- c("darkorchid2", "#1A9850", "#91CF60", "gold2", "#e31a1c")
-StrataCols <- c("very low" = prevcolsAdj[2], "low" = prevcolsAdj[3], "urban" = prevcolsAdj[1], "moderate" = prevcolsAdj[4], "high" = prevcolsAdj[5])
+source(file.path("rlibrary", "customObjects.R"))
+shp_proj <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 
-districts_sp <- shapefile(file.path("Shapefiles", "TZA_Districts.shp"), verbose = FALSE)
-regions_sp <- shapefile(file.path("Shapefiles", "TZA_Regions.shp"), verbose = FALSE)
+### Shapefiles obtained from NMCP Tanzania
+use_old_boundaries = T
+if (!use_old_boundaries) {
+  districts_sp <- shapefile(file.path("Shapefiles", "TZA_Districts.shp"), verbose = FALSE)
+  regions_sp <- shapefile(file.path("Shapefiles", "TZA_Regions.shp"), verbose = FALSE)
+  district_sp_name_old <- 'District_1'
+}else {
+  ### For public repository use public available shapefiles
+  regions_sp <- getData("GADM", country = "TZA", level = 1)
+  districts_sp <- getData("GADM", country = "TZA", level = 2)
+  district_sp_name_old <- 'NAME_2'
+}
 
-projection(districts_sp) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-projection(regions_sp) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 
-names(districts_sp)[which(names(districts_sp) == "District_1")] <- "District"
-districts_sp.f <- fortify(districts_sp, region = "District")
-regions_sp.f <- fortify(regions_sp, region = "Region_Nam")
+projection(districts_sp) <- shp_proj
+projection(regions_sp) <- shp_proj
 
-colnames(districts_sp.f)[colnames(districts_sp.f) == "id"] <- "District"
-colnames(regions_sp.f)[colnames(regions_sp.f) == "id"] <- "Region"
+names(districts_sp)[which(names(districts_sp) == district_sp_name_old)] <- "District"
+### as.MAPshp more convenient to use than fortify
+districts_sp.f <- as.MAPshp(districts_sp)
+regions_sp.f <- as.MAPshp(regions_sp)
 
-load(file.path("simdat", "AnalysisDat.RData"))
+
+load(file.path("dat", "AnalysisDat.RData"))
 tempdat <- unique(AnalysisDat[, c("District", "Strata", "Stratification.5b", "Stratification.5b_withoutUrban")])
+
+if (use_old_boundaries) {
+  dis2 <- sort(unique(tempdat$District)[!(unique(tempdat$District) %in% unique(districts_sp.f$District))])
+  source(file.path('rlibrary', 'f_adjust_tza_old_new_boundaries.R'))
+  tempdat$District[tempdat$District %in% dis2] <- str_replace_all(tempdat$District[tempdat$District %in% dis2],
+                                                                  dis_new_to_old)
+
+}
+
 tempDat.df <- dplyr::left_join(districts_sp.f, tempdat)
 
 pplot <- ggplot(, warnings = FALSE) +
@@ -31,7 +53,6 @@ pplot <- ggplot(, warnings = FALSE) +
   theme_nothing() +
   scale_fill_manual(values = StrataCols, drop = FALSE)
 
-
 ggsave("Fig_1map.png", plot = pplot, path = 'figures', width = 12, height = 10, device = "png")
-ggsave("Fig_1map.pdf", plot = pplot, path = 'figures', width = 12, height = 10, device = "pdf")
+#ggsave("Fig_1map.pdf", plot = pplot, path = 'figures', width = 12, height = 10, device = "pdf")
 

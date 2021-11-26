@@ -1,13 +1,14 @@
-## -----------------------------------------
-#### Figure 5 - Incremental impact in high strata
-## -----------------------------------------
-require(data.table)
-require(tidyverse)
-require(cowplot)
+## ===================================================================
+## Figure 5
+## ===================================================================
+library(data.table)
+library(tidyverse)
+library(spatstat) #weighted.median
 
-library(spatstat)
-source(file.path("rlibrary", "f_spread.R"))
-source(file.path("rlibrary", "f_aggrDat.R"))
+source(file.path("rlibrary", "customObjects.R"))
+source(file.path("rlibrary", "f_AggrDat.R"))
+
+load(file.path("dat", "AnalysisDat.RData"))
 
 incrementalFutScenLabels <- c(
   "increase in CM", "increase in CM - ITN MRC",
@@ -18,22 +19,6 @@ incrementalFutScenLabels <- c(
   "increase in CM - ITN MRC continuous-IRS-IPTsc"
 )
 
-
-incrementalFutScenLabels <- c(
-  "increase in CM", "increase in CM - ITN MRC",
-  "increase in CM - ITN MRC-IRS",
-  "increase in CM - ITN MRC-IPTsc",
-  "increase in CM - ITN MRC continuous",
-  "increase in CM - ITN MRC continuous-IPTsc",
-  "increase in CM - ITN MRC continuous-IRS",
-  "increase in CM - ITN MRC continuous-IRS-IPTsc"
-)
-
-
-theme_set(theme_cowplot())
-fig5cols <- c('#00B2EE', '#8DC63F', '#EE7600', '#C53F42', '#628A2C', '#C38B4B', '#614525', '#9D3234')
-
-load(file.path("simdat", "AnalysisDat.RData"))
 
 CMandLLINFutScenDat <- AnalysisDat %>%
   filter(FutScen_label %in% incrementalFutScenLabels &
@@ -45,26 +30,27 @@ CMandLLINFutScenDat <- AnalysisDat %>%
 ## add table on bottom of plot ?
 AnalysisDat$FutScen_labelPlot <- gsub("increase in ", "",
                                       gsub("MRC continuous", "MRC\n+SNP",
-                                           gsub("-", "\n+", AnalysisDat$FutScen_label)))
+                                           gsub("-", "\n+",
+                                                AnalysisDat$FutScen_label)))
 
 
 ### add table  (Additional table 1 ? )  ## To DO correct table!!
-tempdat <- subset(AnalysisDat, Strata == "high" &
-  statistic == "median" &
-  year == 2020 &
-  FutScen_nr %in% CMandLLINFutScenDat$FutScen_nr)
-
-tapply(tempdat$PRdiff.baseline.perc, tempdat$FutScen_labelPlot, summary)
+AnalysisDat <- AnalysisDat %>%
+  filter(Strata == "high" &
+           statistic == "median" &
+           year == 2020 &
+           FutScen_nr %in% CMandLLINFutScenDat$FutScen_nr)
+tapply(AnalysisDat$PRdiff.baseline.perc, AnalysisDat$FutScen_labelPlot, summary)
 
 
 # PR, PRdiff.baseline.perc
-Fig5A <- ggplot(data = tempdat, aes(x = FutScen_labelPlot, y = PRdiff.baseline.perc, fill = FutScen_labelPlot)) +
+Fig5A <- ggplot(data = AnalysisDat, aes(x = FutScen_labelPlot, y = PRdiff.baseline.perc, fill = FutScen_labelPlot)) +
   geom_hline(yintercept = c(-1 * c(0, 10, 50, 80, 100), c(0, 10, 50, 80, 100)), color = 'grey', size = 0.5) +
   geom_hline(yintercept = 0) +
   geom_boxplot() +
-  stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
+  stat_summary(fun = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
                width = .75, linetype = "dashed") +
-  geom_jitter(data = tempdat, aes(x = FutScen_labelPlot, y = PRdiff.baseline.perc),
+  geom_jitter(data = AnalysisDat, aes(x = FutScen_labelPlot, y = PRdiff.baseline.perc),
               fill = "lightgrey", width = 0.1, height = 0.1, shape = 21) +
   scale_fill_manual(values = fig5cols) +
   theme(legend.position = 'None', axis.text.x = element_blank()) +
@@ -73,58 +59,40 @@ Fig5A <- ggplot(data = tempdat, aes(x = FutScen_labelPlot, y = PRdiff.baseline.p
                      limits = c(-140, 105)) +
   labs(x = "", y = "PfPR2to10 reduction\n2016-2020")
 
+### Summary table
+AnalysisDat %>% f_aggrDat("FutScen_labelPlot", "PRdiff.baseline.perc")
 
-tempdat %>% f_aggrDat("FutScen_labelPlot", "PRdiff.baseline.perc")
+pfprgrp_lbl <- c("no reduction", ">0-10%", "10-50%", "50-80%", "80-100%")
+AnalysisDat$PRdiff.baseline.perc_grp <- cut(AnalysisDat$PRdiff.baseline.perc, c(-Inf, 0, 10, 50, 80, Inf),
+                                            labels = pfprgrp_lbl)
+AnalysisDat$PRdiff.baseline.perc_grp <- factor(AnalysisDat$PRdiff.baseline.perc_grp,
+                                               levels = pfprgrp_lbl, labels = pfprgrp_lbl)
+tapply(AnalysisDat$PRdiff.baseline.perc, AnalysisDat$PRdiff.baseline.perc_grp, summary)
 
-
-tempdat$PRdiff.baseline.perc_grp <- ""
-tempdat$PRdiff.baseline.perc_grp[tempdat$PRdiff.baseline.perc <= 0] <- "increase in PfPR"
-tempdat$PRdiff.baseline.perc_grp[tempdat$PRdiff.baseline.perc > 0 & tempdat$PRdiff.baseline.perc < 10] <- "<10% reduction in PfPR"
-tempdat$PRdiff.baseline.perc_grp[tempdat$PRdiff.baseline.perc >= 10 & tempdat$PRdiff.baseline.perc < 50] <- ">10% reduction in PfPR"
-tempdat$PRdiff.baseline.perc_grp[tempdat$PRdiff.baseline.perc >= 50 & tempdat$PRdiff.baseline.perc < 80] <- ">50% reduction in PfPR"
-tempdat$PRdiff.baseline.perc_grp[tempdat$PRdiff.baseline.perc >= 80] <- ">80% reduction in PfPR"
-tempdat$PRdiff.baseline.perc_grp <- factor(tempdat$PRdiff.baseline.perc_grp,
-                                           levels = c("increase in PfPR",
-                                                      "<10% reduction in PfPR",
-                                                      ">10% reduction in PfPR",
-                                                      ">50% reduction in PfPR",
-                                                      ">80% reduction in PfPR"),
-                                           labels = c("no reduction",
-                                                      ">0-10%",
-                                                      "10-50%",
-                                                      "50-80%",
-                                                      "80-100%")
-)
-
-table(tempdat$PRdiff.baseline.perc_grp, exclude = NULL)
-
-tempdat %>%
+AnalysisDat %>%
   filter(PRdiff.baseline.perc > 50) %>%
   dplyr::group_by(FutScen_labelPlot, District) %>%
   unique() %>%
   dplyr::group_by(FutScen_labelPlot) %>%
   dplyr::tally()
 
-(tab <- tempdat %>%
+(tab <- AnalysisDat %>%
   group_by(FutScen_labelPlot, PRdiff.baseline.perc_grp) %>%
   tally() %>%
   spread(PRdiff.baseline.perc_grp, n) %>%
   as.data.frame())
 
-(tab2 <- tempdat %>%
+(tab2 <- AnalysisDat %>%
   group_by(FutScen_label, District, PRdiff.baseline.perc_grp) %>%
   dplyr::summarize(perc = mean(PRdiff.baseline.perc)) %>%
   spread(PRdiff.baseline.perc_grp, perc) %>%
   as.data.frame())
 
-table(tempdat$PRdiff.baseline.perc_grp)
+table(AnalysisDat$PRdiff.baseline.perc_grp)
+table(gsub("\n", "+", AnalysisDat$FutScen_labelPlot), AnalysisDat$PRdiff.baseline.perc_grp)
+rowSums(table(gsub("\n", "+", AnalysisDat$FutScen_labelPlot), AnalysisDat$PRdiff.baseline.perc_grp))
 
-table(gsub("\n", "+", tempdat$FutScen_labelPlot), tempdat$PRdiff.baseline.perc_grp)
-rowSums(table(gsub("\n", "+", tempdat$FutScen_labelPlot), tempdat$PRdiff.baseline.perc_grp))
-
-tabDat <- as.data.frame(tab)
-tabDat <- melt(tabDat)
-tabDat$value <- as.numeric(as.character(tabDat$value))
+tabDat <- tab %>% pivot_longer(cols = -FutScen_labelPlot, names_to = 'variable')
 
 Fig5B <- ggplot(data = tabDat, aes(x = variable, y = value, label = value)) +
   geom_bar(aes(fill = FutScen_labelPlot), stat = "identity", width = 0.5, col = "black") +
@@ -145,25 +113,24 @@ Fig5B <- ggplot(data = tabDat, aes(x = variable, y = value, label = value)) +
 
 pplot <- plot_grid(Fig5A, Fig5B, nrow = 2, rel_heights = c(1, 1), align = "v", axis = "l")
 ggsave("Fig_5.png", plot = pplot, path = 'figures', width = 14, height = 10, device = "png")
-ggsave("Fig_5.pdf", plot = pplot, path = 'figures', width = 14, height = 10, device = "pdf")
+#ggsave("Fig_5.pdf", plot = pplot, path = 'figures', width = 14, height = 10, device = "pdf")
 
+AnalysisDat %>%
+  dplyr::select(District, year, Strata, FutScen_nr, FutScen_label, EIRgrp, 
+              PR, PRdiff.baseline.perc, PRdiff.baseline.perc_grp) %>%
+  fwrite(file = file.path('figures', 'figuredat', "Fig_5A.csv"))
+fwrite(tabDat, file = file.path('figures', 'figuredat', "Fig_5B.csv"))
 
-fwrite(tempdat[, c('District', 'year', 'Strata', 'FutScen_nr', 'FutScen_label', 'FutScen_label_noCM',
-                   'EIRgrp', 'PR', 'PRdiff.baseline.perc', 'PRdiff.baseline.perc_grp')], file = file.path('figures', "Fig_5A.csv"))
-fwrite(tabDat, file = file.path('figures', "Fig_5B.csv"))
-
+rm(Fig5A,Fig5B,pplot,tabDat )
 
 ####################### INCIDENCE
-
-
-# _incidence
 Fig5A <- ggplot() +
   geom_hline(yintercept = c(-1 * c(0, 10, 50, 80, 100), c(0, 10, 50, 80, 100)), color = 'grey', size = 0.5) +
   geom_hline(yintercept = 0) +
-  geom_boxplot(data = tempdat, aes(x = FutScen_labelPlot, y = CasesAverted.baseline.perc, fill = FutScen_labelPlot)) +
+  geom_boxplot(data = AnalysisDat, aes(x = FutScen_labelPlot, y = CasesAverted.baseline.perc, fill = FutScen_labelPlot)) +
   stat_summary(fun.y = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..),
                width = .75, linetype = "dashed") +
-  geom_jitter(data = tempdat, aes(x = FutScen_labelPlot, y = CasesAverted.baseline.perc),
+  geom_jitter(data = AnalysisDat, aes(x = FutScen_labelPlot, y = CasesAverted.baseline.perc),
               fill = "lightgrey", width = 0.1, height = 0.1, shape = 21) +
   scale_fill_manual(values = fig5cols) +
   theme(legend.position = 'None', axis.text.x = element_blank()) +
@@ -173,54 +140,38 @@ Fig5A <- ggplot() +
   labs(x = "", y = "Cases averted (%)\n2016-2020")
 
 
-tempdat$CasesAverted.baseline.perc_grp <- 0
-tempdat$CasesAverted.baseline.perc_grp[tempdat$CasesAverted.baseline.perc <= 0] <- "increase in Cases"
-tempdat$CasesAverted.baseline.perc_grp[tempdat$CasesAverted.baseline.perc > 0 & tempdat$CasesAverted.baseline.perc < 10] <- "<10% reduction in Cases"
-tempdat$CasesAverted.baseline.perc_grp[tempdat$CasesAverted.baseline.perc >= 10 & tempdat$CasesAverted.baseline.perc < 50] <- ">10% reduction in Cases"
-tempdat$CasesAverted.baseline.perc_grp[tempdat$CasesAverted.baseline.perc >= 50 & tempdat$CasesAverted.baseline.perc < 80] <- ">50% reduction in Cases"
-tempdat$CasesAverted.baseline.perc_grp[tempdat$CasesAverted.baseline.perc >= 80] <- ">80% reduction in Cases"
-tempdat$CasesAverted.baseline.perc_grp <- factor(tempdat$CasesAverted.baseline.perc_grp,
-                                                 levels = c("increase in Cases",
-                                                            "<10% reduction in Cases",
-                                                            ">10% reduction in Cases",
-                                                            ">50% reduction in Cases",
-                                                            ">80% reduction in Cases"),
-                                                 labels = c("no reduction",
-                                                            ">0-10%",
-                                                            "10-50%",
-                                                            "50-80%",
-                                                            "80-100%")
-)
+CasesAverted_lbl <- c("no reduction", ">0-10%", "10-50%", "50-80%", "80-100%")
+AnalysisDat$CasesAverted.baseline.perc_grp <- cut(AnalysisDat$CasesAverted.baseline.perc, c(-Inf, 0, 10, 50, 80, Inf),
+                                                  labels = CasesAverted_lbl)
+AnalysisDat$CasesAverted.baseline.perc_grp <- factor(AnalysisDat$CasesAverted.baseline.perc_grp,
+                                                     levels = CasesAverted_lbl, labels = CasesAverted_lbl)
+tapply(AnalysisDat$CasesAverted.baseline.perc, AnalysisDat$CasesAverted.baseline.perc_grp, summary)
 
-table(tempdat$CasesAverted.baseline.perc_grp, exclude = NULL)
 
-tempdat %>%
-  filter(CasesAverted.baseline.perc_grp > 50) %>%
+AnalysisDat %>%
+  filter(CasesAverted.baseline.perc > 50) %>%
   dplyr::group_by(FutScen_labelPlot, District) %>%
   unique() %>%
   dplyr::group_by(FutScen_labelPlot) %>%
   dplyr::tally()
 
-(tab <- tempdat %>%
+(tab <- AnalysisDat %>%
   group_by(FutScen_labelPlot, CasesAverted.baseline.perc_grp) %>%
   tally() %>%
   spread(CasesAverted.baseline.perc_grp, n) %>%
   as.data.frame())
 
-(tab2 <- tempdat %>%
+(tab2 <- AnalysisDat %>%
   group_by(FutScen_label, District, CasesAverted.baseline.perc_grp) %>%
   dplyr::summarize(perc = mean(CasesAverted.baseline.perc_grp)) %>%
   spread(CasesAverted.baseline.perc_grp, perc) %>%
   as.data.frame())
 
-table(tempdat$CasesAverted.baseline.perc_grp)
+table(AnalysisDat$CasesAverted.baseline.perc_grp)
+table(gsub("\n", "+", AnalysisDat$FutScen_labelPlot), AnalysisDat$CasesAverted.baseline.perc_grp)
+rowSums(table(gsub("\n", "+", AnalysisDat$FutScen_labelPlot), AnalysisDat$CasesAverted.baseline.perc_grp))
 
-table(gsub("\n", "+", tempdat$FutScen_labelPlot), tempdat$CasesAverted.baseline.perc_grp)
-rowSums(table(gsub("\n", "+", tempdat$FutScen_labelPlot), tempdat$CasesAverted.baseline.perc_grp))
-
-tabDat <- as.data.frame(tab)
-tabDat <- melt(tabDat)
-tabDat$value <- as.numeric(as.character(tabDat$value))
+tabDat <- tab %>% pivot_longer(cols = -FutScen_labelPlot, names_to = 'variable')
 
 Fig5B <- ggplot(data = tabDat, aes(x = variable, y = value, label = value)) +
   geom_bar(aes(fill = FutScen_labelPlot), stat = "identity", width = 0.5, col = "black") +
@@ -241,11 +192,14 @@ Fig5B <- ggplot(data = tabDat, aes(x = variable, y = value, label = value)) +
 
 pplot <- plot_grid(Fig5A, Fig5B, nrow = 2, rel_heights = c(1, 1), align = "v", axis = "l")
 ggsave("Fig_5_inc.png", plot = pplot, path = 'figures', width = 14, height = 10, device = "png")
-ggsave("Fig_5_inc.pdf", plot = pplot, path = 'figures', width = 14, height = 10, device = "pdf")
+#ggsave("Fig_5_inc.pdf", plot = pplot, path = 'figures', width = 14, height = 10, device = "pdf")
 
 
-fwrite(tempdat[, c('District', 'year', 'Strata', 'FutScen_nr', 'FutScen_label', 'FutScen_label_noCM',
-                   'EIRgrp', 'PR', 'PRdiff.baseline.perc', 'PRdiff.baseline.perc_grp')], file = file.path('figures', "Fig_5A_inc.csv"))
-fwrite(tabDat, file = file.path('figures', "Fig_5B_inc.csv"))
+AnalysisDat %>%
+  dplyr::select(District, year, Strata, FutScen_nr, FutScen_label, EIRgrp,
+                   PR, PRdiff.baseline.perc, PRdiff.baseline.perc_grp) %>%
+  fwrite(file = file.path('figures', 'figuredat', "Fig_5A_inc.csv"))
+fwrite(tabDat, file = file.path('figures', 'figuredat', "Fig_5B_inc.csv"))
+
 
 

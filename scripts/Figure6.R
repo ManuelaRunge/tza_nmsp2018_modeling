@@ -1,44 +1,36 @@
-## -----------------------------------------
-#### Figure  6 -  comparison between current and revised NMSP per district
-## -----------------------------------------
-
-
+## ===================================================================
+## Figure 6
+## ===================================================================
+library(data.table)
 library(tidyverse)
-library(cowplot)
-library(spatstat)
-source(file.path("rlibrary", "f_spread.R"))
-source(file.path("rlibrary", "f_aggrDat.R"))
-###  NMSP Strategies to compare
-selectedStrategies <- c("NMSPcurrent.withCM", "revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM") # c("NMSPcurrent.withCM","revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM")
-theme_set(theme_cowplot())
-prevcolsAdj <- c("darkorchid2", "#1A9850", "#91CF60", "gold2", "#e31a1c")
-StrataCols <- c("very low" = prevcolsAdj[2], "low" = prevcolsAdj[3], "urban" = prevcolsAdj[1], "moderate" = prevcolsAdj[4], "high" = prevcolsAdj[5])
+library(spatstat) #weighted.median
 
+source(file.path("rlibrary", "customObjects.R"))
+source(file.path("rlibrary", "f_AggrDat.R"))
 
-load(file.path("simdat", "AnalysisDat2.RData"))
-simPop <- 10000
-AnalysisDat2$Cases.pP <- AnalysisDat2$Cases / simPop
-AnalysisDat2$incidence <- (AnalysisDat2$Cases / simPop) * 1000
+selectedStrategies <- c("NMSPcurrent.withCM", "revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM")
+
+load(file.path("dat", "AnalysisDat2.RData"))
+AnalysisDat$Cases.pP <- AnalysisDat$Cases / simPop
+AnalysisDat$incidence <- (AnalysisDat$Cases / simPop) * 1000
+
 
 ## PRdiff.baseline.perc
-Disdat1 <- AnalysisDat2 %>%
+Disdat1 <- AnalysisDat %>%
   dplyr::filter(year == 2020 &
-                  Strategy_FutScen_nr == Strategy_FutScen_nr &
+                  FutScen_nr == Strategy_FutScen_nr &
                   Strategy %in% selectedStrategies) %>%
   dplyr::select(District, statistic, Population_2016, StrataLabel, Strategy, PR) %>%
-  spread(Strategy, PR) %>%
-  mutate(
-    outcome = "PR",
+  pivot_wider(names_from=Strategy,values_from=PR) %>%
+  mutate(outcome = "PR",
     relNMSPoldnew = (NMSPcurrent.withCM / revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM)
   ) %>%
   as.data.frame()
 
-Disdat1 %>% filter(statistic == "median") %>%
-  select(District, relNMSPoldnew, NMSPcurrent.withCM , revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM)
 
 Disdat2 <- AnalysisDat2 %>%
   dplyr::filter(year == 2020 &
-                  Strategy_FutScen_nr == Strategy_FutScen_nr &
+                  FutScen_nr == Strategy_FutScen_nr &
                   Strategy %in% selectedStrategies) %>%
   dplyr::select(District, statistic, Population_2016, StrataLabel, Strategy, Cases.pP) %>%
   spread(Strategy, Cases.pP) %>%
@@ -112,22 +104,16 @@ pplot <- ggplot(data = subset(Disdat, outcome != 'Cases.pP' & statistic == "medi
   geom_line(aes(
     x = relNMSPoldnewAggr_w,col=StrataLabel,  group = StrataLabel, y = reorder(District, as.numeric(StrataLabel))
   ), size = 1.0, linetype="dotdash", show.legend = F) + #, col = "grey"
-  #geom_point(aes(
-  #  x = (NMSPcurrent.withCM / NMSPcurrent.withCM),
-  #  y = reorder(District, as.numeric(StrataLabel)), fill = as.factor(Levels)
-  #), size = 2, shape = 21) +
   geom_hline(yintercept = c(-Inf, Inf)) +
   geom_vline(xintercept = c(-Inf, Inf)) +
     geom_vline(xintercept = 1) +
   scale_x_continuous(lim=c(-0.2,3.5),expand=c(0,0))+
-  # coord_cartesian(xlim=c(-2,1)) +
   scale_y_discrete(labels = c()) +
   theme(legend.position = "bottom", axis.ticks.y = element_blank()) +
   scale_fill_manual(values = c("black", "white")) +
   scale_color_manual(values = StrataCols) +
   facet_wrap(~outcomen, scales = "free_x", strip.position = "bottom", labeller = labeller(.cols = label_parsed)) +
   theme(
-    #    strip.text.x = element_text( margin = margin( 0.5,0,0.5,0, "cm") ),
     strip.text.x = element_text(size = 18),
     panel.spacing.x = unit(0, "line"),
     strip.placement = "outside",
@@ -142,13 +128,13 @@ pplot <- ggplot(data = subset(Disdat, outcome != 'Cases.pP' & statistic == "medi
     plot.subtitle = element_text(hjust = -0.25, face = "bold", size = 16),
     legend.position = "bottom"
   ) +
-  labs(col = "Stratification", subtitle = "", y = "Councils sorted by strata (n=184)", fill = "Agreement between outcomes")
+  labs(col = "Stratification", subtitle = "",
+       y = "Councils sorted by strata (n=184)",
+       fill = "Agreement between outcomes")
 
-pplot
-# Figure6
-if (SAVE) {
-  ggsave(paste0("Figure6_ratio.png"), plot = pplot, path = file.path("figures"), width = 10, height = 12, device = "png")
-  ggsave(paste0("Figure6_ratio.pdf"), plot = pplot, path = file.path("figures"), width = 10, height = 12, device = "pdf")
 
-}
+ggsave(paste0("Fig_6.png"), plot = pplot, path = file.path("figures"), width = 10, height = 12, device = "png")
+ggsave(paste0("Fig_6.pdf"), plot = pplot, path = file.path("figures"), width = 10, height = 12, device = "pdf")
+
+
 
