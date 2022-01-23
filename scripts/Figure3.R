@@ -1,18 +1,10 @@
-## ===================================================================
-## Figure 3
-## ===================================================================
-library(data.table)
-library(tidyverse)
-library(spatstat) #weighted.median
-
-source(file.path("rlibrary", "customObjects.R"))
-source(file.path("rlibrary", "f_AggrDat.R"))
-source(file.path("rlibrary", "f_spread.R"))
+cat(paste0('Start running Figure3.R'))
 
 selectedOutcome <- "PR"  # "Cases.pP"
 
-load(file.path("dat", "AnalysisDat.Rdata"))
+load(file.path("simdat", "AnalysisDat.Rdata"))
 AnalysisDat <- AnalysisDat %>% filter((year == 2022 | year == 2020 | year == 2016))
+str(AnalysisDat)
 
 FutNrDat <- AnalysisDat %>%
   filter(FutureScenarios == "onlyCMandITN" &
@@ -24,12 +16,11 @@ FutNrDat <- AnalysisDat %>%
 ### generate variables for nets, regardless of other interventions
 tempdat <- AnalysisDat %>%
   ungroup() %>%
-  group_by(StrataLabel) %>%
+  group_by(Strata) %>%
   filter(FutScen_nr %in% FutNrDat$FutScen_nr &
            FutScen_label != "ITN MRC continuous")
 
-table(tempdat$FutScen_label, tempdat$StrataLabel)
-### add label variable
+table(tempdat$FutScen_label, tempdat$Strata)
 tempdat$withWithoutNets <- "CM only"
 tempdat$withWithoutNets[grep("ITN", tempdat$FutScen_label)] <- "+ ITNs"
 tempdat$withWithoutNets <- factor(tempdat$withWithoutNets,
@@ -37,42 +28,42 @@ tempdat$withWithoutNets <- factor(tempdat$withWithoutNets,
                                   labels = c("CM only", "+ ITNs"))
 
 ### aggregate LLIN group - take mean --- or generate ranges across all LLIN scenarios?
-groupVARS <- c("District", "statistic", "Stratification.5b", "Population_2016", "StrataLabel", "withWithoutNets", "year")
+groupVARS <- c("District", "statistic", "Strata", "Population_2016", "withWithoutNets", "year")
 tempdatForDiff <- tempdat %>%
   dplyr::group_by_at(.vars = groupVARS) %>%
   dplyr::summarize(PR = mean(PR))
 
 ## calculate difference in CM vs CM+LLIN
-groupVARS <- c("District", "statistic", "Stratification.5b", "Population_2016", "StrataLabel", "year")
+groupVARS <- c("District", "statistic", "Strata", "Population_2016", "year")
 tempdatForDiff <- data.table(tempdatForDiff, key = groupVARS)
 tempdatForDiff[, CMITNdiff := PR[withWithoutNets == "CM only"] - PR[withWithoutNets == "+ ITNs"], by = groupVARS]
 tempdatForDiff[, CMITNdiff_perc := ((PR[withWithoutNets == "CM only"] - PR[withWithoutNets == "+ ITNs"]) / PR[withWithoutNets == "CM only"]) * 100, by = groupVARS]
 
 ## transform back to data frame and then aggregate from council to strata
-groups <- c("statistic", "Stratification.5b", "StrataLabel", "withWithoutNets", "year")
+groups <- c("statistic", "Strata", "withWithoutNets", "year")
 tempdatForDiffAggr <- tempdatForDiff %>%
-  filter(StrataLabel %in% c("very low", "low", "urban")) %>%
+  filter(Strata %in% c("very low", "low", "urban")) %>%
   f_weighted.aggrDat(groupVars = groups, valueVar = "CMITNdiff", weightVar = "Population_2016", WideToLong = FALSE)
 
-tempdatForDiffAggr %>% filter(year == 2020)
+#tempdatForDiffAggr %>% filter(year == 2020)
 table(tempdat$District, tempdat$withWithoutNets)
 
 ### add n districts
 nDisSTrata <- tempdat %>%
-  dplyr::select(District, StrataLabel) %>%
+  dplyr::select(District, Strata) %>%
   unique() %>%
-  dplyr::group_by(StrataLabel) %>%
+  dplyr::group_by(Strata) %>%
   tally()
 sum(nDisSTrata$n)
 
 ### Creae label variable
-tempdat$StrataRev_adj <- as.character(tempdat$Stratification.5b)
+tempdat$StrataRev_adj <- as.character(tempdat$Strata)
 tempdat$StrataRev_adj <- factor(tempdat$StrataRev_adj,
                                 levels = c("very low", "low", "urban"),
                                 labels = c(
-                                  paste0("very low\n(n=", nDisSTrata$n[nDisSTrata$StrataLabel == "very low"], ")"),
-                                  paste0("low\n(n=", nDisSTrata$n[nDisSTrata$StrataLabel == "low"], ")"),
-                                  paste0("urban\n(n=", nDisSTrata$n[nDisSTrata$StrataLabel == "urban"], ")")
+                                  paste0("very low\n(n=", nDisSTrata$n[nDisSTrata$Strata == "very low"], ")"),
+                                  paste0("low\n(n=", nDisSTrata$n[nDisSTrata$Strata == "low"], ")"),
+                                  paste0("urban\n(n=", nDisSTrata$n[nDisSTrata$Strata == "urban"], ")")
                                 )
 )
 
@@ -80,18 +71,14 @@ tempdat$StrataRev_adj <- factor(tempdat$StrataRev_adj,
 if (selectedOutcome == "PR") selectedOutcomeLabel <- expression(italic("PfPR")["2 to 10"] * " (%)")
 if (selectedOutcome == "Cases.pP") selectedOutcomeLabel <- "Cases pP"
 
-groups <- c("statistic", "Stratification.5b", "StrataRev_adj", "withWithoutNets", "year")
+groups <- c("statistic", "Strata", "Strata_withoutUrban", "StrataRev_adj", "withWithoutNets", "year")
+
 plotdat <- tempdat %>%
-  filter(statistic == "median" & StrataLabel %in% c("very low", "low", "urban")) %>%
-  f_weighted.aggrDat(groups, selectedOutcome, "Population_2016", FALSE)
+  filter(statistic == "median" & Strata %in% c("very low", "low", "urban")) %>%
+  aggregatDat(groupVars = groups, valueVar = selectedOutcome, weightVar = "Population_2016", weightedAggr = weightedAggr)
 
-plotdat_unw <- tempdat %>%
-  filter(statistic == "median" &
-           StrataLabel %in% c("very low", "low", "urban")) %>%
-  f_aggrDat(groups, selectedOutcome, FALSE)
 
-plotdat_unw$withWithoutNets_year <- paste0(plotdat_unw$withWithoutNets, ' ', plotdat_unw$year)
-
+plotdat$withWithoutNets_year <- paste0(plotdat$withWithoutNets, ' ', plotdat$year)
 withWithoutNets_year_cols <- c("CM only 2016" = "#7FD8F6",
                                "CM only 2020" = "#00B2EE",
                                "CM only 2022" = "#007CA6",
@@ -102,10 +89,10 @@ withWithoutNets_year_cols <- c("CM only 2016" = "#7FD8F6",
 pplotSmall <- ggplot() +
   geom_hline(yintercept = 1, linetype = "dashed") +
   theme_cowplot() +
-  geom_bar(data = subset(plotdat_unw, statistic == "median"),
+  geom_bar(data = subset(plotdat, statistic == "median"),
            aes(x = withWithoutNets, y = mean.val, fill = withWithoutNets_year, group = year),
            stat = "identity", position = position_dodge(width = 0.5), width = 0.5, size = 0.7) +
-  geom_errorbar(data = subset(plotdat_unw, statistic == "median"),
+  geom_errorbar(data = subset(plotdat, statistic == "median"),
                 aes(x = withWithoutNets, ymin = lower.ci.val, ymax = upper.ci.val, group = year),
                 stat = "identity", position = position_dodge(width = 0.5), width = 0.5, size = 0.7, col = "black") +
   scale_fill_manual(values = withWithoutNets_year_cols) +
@@ -121,7 +108,7 @@ tempdat$EIRgrp <- cut(tempdat$EIR, c(-Inf, 2, 5, 10, 20, 40, 80, Inf),
                       labels = c("EIR <2", "EIR 2-5", "EIR 5-10", "EIR 10-20", "EIR 20-40", "EIR 40-80", "EIR >80"))
 
 tempdat$EIRgrp_adj <- cut(tempdat$EIR, c(-Inf, 2, 5, 10, Inf),
-                      labels = c("EIR <2", "EIR 2-5", "EIR 5-10", "EIR > 10"))
+                          labels = c("EIR <2", "EIR 2-5", "EIR 5-10", "EIR > 10"))
 
 counterfactualInterventions <- tempdat %>%
   ungroup() %>%
@@ -136,13 +123,14 @@ counterfactualInterventions <- tempdat %>%
 (counterfactualInterventions <- counterfactualInterventions$FutScen_nr)
 
 d <- tempdat %>%
+  ungroup() %>%
   filter(year == 2016 &
            FutScen_nr == counterfactualInterventions &
-           Stratification.5b_withoutUrban == "Very low") %>%
-  dplyr::select(FutScen_nr, District, year, Stratification.5b_withoutUrban, EIRgrp_adj) %>%
+           Strata_withoutUrban == "Very low") %>%
+  dplyr::select(FutScen_nr, District, year, Strata_withoutUrban, EIRgrp_adj) %>%
   unique() %>%
-  group_by(FutScen_nr, Stratification.5b_withoutUrban, year, EIRgrp_adj) %>%
-  arrange(FutScen_nr, Stratification.5b_withoutUrban, EIRgrp_adj) %>%
+  group_by(FutScen_nr, Strata_withoutUrban, year, EIRgrp_adj) %>%
+  arrange(FutScen_nr, Strata_withoutUrban, EIRgrp_adj) %>%
   tally()
 
 tempdat$EIRgrp_adj <- factor(tempdat$EIRgrp_adj,
@@ -159,28 +147,17 @@ table(tempdat$EIRgrp_adj, tempdat$EIRgrp, exclude = NULL)
 
 
 #### Prepare main plot - show very low only
-table(tempdat$withWithoutNets, tempdat$Stratification.5b_withoutUrban)
-groups <- c("Stratification.5b_withoutUrban", "EIRgrp_adj", "withWithoutNets", "year")
-plotdat2 <- tempdat %>%
-  f_weighted.aggrDat(groups, selectedOutcome, "Population_2016", FALSE) %>%
-  filter(Stratification.5b_withoutUrban == "Very low")
-summary(plotdat2$n.val)
-
-## aggregate ITN grp
-groups <- c("District", "Stratification.5b_withoutUrban", "EIRgrp_adj", "withWithoutNets", "year")
-plotdat2a <- tempdat %>%
-  f_weighted.aggrDat(groupVars = groups, valueVar = selectedOutcome, weightVar = "Population_2016", WideToLong = FALSE) %>%
-  filter(Stratification.5b_withoutUrban == "Very low")
-summary(plotdat2a$n.val)
+table(tempdat$withWithoutNets, tempdat$Strata_withoutUrban)
+groups <- c("Strata_withoutUrban", "EIRgrp_adj", "withWithoutNets", "year")
 
 ### spread statistic
 tempdat_stat <- tempdat %>%
   ungroup() %>%
-  dplyr::select(EIR, year, Stratification.5b_withoutUrban, FutScen_nr, District, withWithoutNets, statistic, PR) %>%
-  pivot_wider(names_from=statistic,values_from= c("PR", "EIR"))
+  dplyr::select(EIR, year, Strata_withoutUrban, FutScen_nr, District, withWithoutNets, statistic, PR) %>%
+  pivot_wider(names_from = statistic, values_from = c("PR", "EIR"))
 
 pplotMain <- ggplot(
-  data = subset(tempdat_stat, Stratification.5b_withoutUrban == "Very low"),
+  data = subset(tempdat_stat, Strata_withoutUrban == "Very low"),
   aes(x = EIR_median, y = PR_median,
       ymin = PR_q2.5, ymax = PR_q97.5,
       xmin = EIR_q2.5, xmax = EIR_q97.5,
@@ -209,20 +186,20 @@ ggsave(paste0("Fig_3.png"), plot = Figure3, path = file.path("figures"), width =
 
 
 ### Save datasetss
-fwrite(plotdat2, file = file.path("figures", 'figuredat', paste0("Fig3_pplotMain_", selectedOutcome, ".csv")))
 fwrite(plotdat, file = file.path("figures", 'figuredat', paste0("Fig3_pplotSmall_", selectedOutcome, ".csv")))
 fwrite(tempdat, file = file.path("figures", 'figuredat', paste0("Fig3_tempdat_", selectedOutcome, ".csv")))
+fwrite(tempdat_stat, file = file.path("figures", 'figuredat', paste0("Fig3_tempdat_stat", selectedOutcome, ".csv")))
 
 
 #### For text
-dat <- plotdat_unw %>%
+dat <- plotdat %>%
   ungroup() %>%
   dplyr::filter(statistic == "median") %>%
-  dplyr::select(Stratification.5b, withWithoutNets, year, mean.val, lower.ci.val, upper.ci.val)
+  dplyr::select(Strata, Strata_withoutUrban, withWithoutNets, year, mean.val, lower.ci.val, upper.ci.val, weighted)
 
-dat_2016 <- dat %>% filter(year == 2016) %>% select(-year)
-dat_2020 <- dat %>% filter(year == 2020) %>% select(-year)
-dat_2022 <- dat %>% filter(year == 2022) %>% select(-year)
+dat_2016 <- dat %>% filter(year == 2016) %>% dplyr::select(-year)
+dat_2020 <- dat %>% filter(year == 2020) %>% dplyr::select(-year)
+dat_2022 <- dat %>% filter(year == 2022) %>% dplyr::select(-year)
 
 colnames(dat_2016)[c(3:5)] <- paste0(colnames(dat_2016)[c(3:5)], "_2016")
 colnames(dat_2020)[c(3:5)] <- paste0(colnames(dat_2020)[c(3:5)], "_2020")

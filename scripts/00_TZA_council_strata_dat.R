@@ -1,14 +1,9 @@
 ## ===================================================================
 ## Tanzania councils and simulated district names with strata
-##
 ## Councils names and strata citation:
 ## Thawer, S.G., Chacky, F., Runge, M. et al. Sub-national stratification of malaria risk in mainland Tanzania:
 ## a simplified assembly of survey and routine data. Malar J 19, 177 (2020). https://doi.org/10.1186/s12936-020-03250-4
 ## ===================================================================
-library(tidyverse)
-library(data.table)
-
-source(file.path("rlibrary", "customObjects.R"))
 
 ## download council with strata file
 ## https://malariajournal.biomedcentral.com/articles/10.1186/s12936-020-03250-4#Sec24
@@ -30,10 +25,10 @@ length(urban_strata_councils) #25
 TZA_dat <- read_excel(si2_path, skip = 1) %>%
   dplyr::select(Region, Council, Stratum) %>%
   mutate(Region = ifelse(Region == 'Dar Es Salaam Region', 'Daressalaam', gsub(" Region", "", Region)),
-         Stratum = tolower(Stratum),
-  Stratum_urban = ifelse(Council %in% urban_strata_councils,'urban',Stratum)) %>%
+         Strata = tolower(Stratum),
+         Strata_urban = ifelse(Council %in% urban_strata_councils, 'urban', Strata)) %>%
   left_join(name_dic) %>%
-  dplyr::select(Region,District,Council,Stratum,Stratum_urban)
+  dplyr::select(Region, District, Council, Strata, Strata_urban)
 
-fwrite(TZA_dat,file.path('dat','TZA_dat.csv'))
+fwrite(TZA_dat, file.path('dat', 'TZA_dat.csv'))
 

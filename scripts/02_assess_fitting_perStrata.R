@@ -1,539 +1,341 @@
-## ===================================================================
-## Figure 2
-## ===================================================================
+### combined plot with history - additional files
+### load historical prevalence data
+## KEMRI pfpr
+load(file.path('dat', 'pfpr_kemri', 'TZA_KEMRI_pfpr_161018.RData'))
+head(KEMRIpfpr_long)
+KEMRIpfpr_long <- subset(KEMRIpfpr_long, year >= 2003)
 
-## prepare data 
-## combine observed and simulated data to one dataframe
-prevCordat1 <- ds.obs_long %>%
-  dplyr::filter(AgeGroup == "2to10" & year >= 2003 & year <= 2017) %>%
-  dplyr::mutate(estimatesource = "obs", PR = value * 100, PRlo = NA, PRup = NA) %>%
-  dplyr::select(District, year, PR, PRlo, PRup, estimatesource) %>%
-  as.data.frame
+### load aggregated stats per strata
+numVars <- c("mean", "sd", "quant_0", "quant_25", "quant_50", "quant_75", "quant_100")
+KEMRI_PfPRAggrStrata <- read.csv(file.path('dat', 'pfpr_kemri', 'PfPR_aggregatedStats_perStrata.csv')) %>%
+  rename_with(~gsub("[.]", "", .x)) %>%
+  mutate_at(.vars = numVars, .funs = function(x) x * 100)
 
-### take mean of future scenarios for baselne , instead of just one future scenario		
-#use median and credible intervals
-prevCordat2 <- JAGSresults %>%
-  dplyr::filter(outcome == "PR") %>%
-  dplyr::group_by(District, year) %>%
-  dplyr::summarize(PR = mean(median) * 100, PRlo = mean(q2.5) * 100, PRup = mean(q97.5) * 100) %>%
-  dplyr::mutate(estimatesource = "sim") %>%
-  dplyr::select(District, year, PR, PRlo, PRup, estimatesource) %>%
-  as.data.frame()
+load(file.path(simout_dir, "JAGSresults_wide.RData"))
+tempdat <- JAGSresults_wide %>%
+  filter(year <= 2017) %>%
+  group_by(District, Strata, Strata_withoutUrban, Population_2016, year, statistic) %>%
+  summarise(PR = mean(PR))
+table(tempdat$District, tempdat$year)
 
-prevCordat <- rbind(prevCordat1, prevCordat2)
-prevCordat$District <- as.character(prevCordat$District)
-prevCordat <- merge(prevCordat, TZADistrictDat[, c("Region", "District", "urbanrural", "MIS_UMRC")], by = "District", all.x = TRUE)
-rm(prevCordat1, prevCordat2)
+combDat <- KEMRIpfpr_long %>%
+  filter(year == 2016) %>%
+  dplyr::select(District, year, PfPR) %>%
+  left_join(tempdat) %>%
+  gather(var, value, -c(District, Strata, Strata_withoutUrban, Population_2016, year, statistic)) %>%
+  mutate(var = ifelse(var == "PfPR", "MBG", "OM"))
 
-## long to wide format
-prevCordat_wide <- reshape(prevCordat, idvar = c("Region", "District", "urbanrural", "MIS_UMRC", "year"), timevar = "estimatesource", direction = "wide")
+tempdat2 <- KEMRIpfpr_long %>%
+  filter(year >= 2003 & year <= 2016) %>%
+  dplyr::select(District, year, PfPR) %>%
+  left_join(tempdat)
 
-### Add label variables 
-prevCordat_wide$timeperiod <- "Historical trend"
-prevCordat_wide$timeperiod[prevCordat_wide$year == baselineYear] <- "Baseline"
-prevCordat_wide$timeperiod[prevCordat_wide$year == MonitoringStart] <- "Pre-intervention year"
+tempdat3 <- tempdat %>%
+  filter(statistic == "median") %>%
+  dplyr::select(District, Strata, Strata_withoutUrban, Population_2016, year, PR)
 
-prevCordat_wide$timeperiod2 <- "Historical trend"
-prevCordat_wide$timeperiod2[prevCordat_wide$year == baselineYear] <- "Baseline year (2016)"
-prevCordat_wide$timeperiod2[prevCordat_wide$year == MonitoringStart] <- "Pre-intervention year (2003)"
+tempdat3b <- tempdat %>%
+  dplyr::select(District, Strata, Strata_withoutUrban, Population_2016, year, statistic, PR) %>%
+  pivot_wider(names_from = statistic, values_from = PR)
+tapply(tempdat3b$mean, tempdat3b$year, summary)
 
-prevCordat_wide$timeperiod2 <- factor(prevCordat_wide$timeperiod2,
-                                      levels = c("Pre-intervention year (2003)", "Historical trend", "Baseline year (2016)"),
-                                      labels = c("Pre-intervention year (2003)", "Historical trend", "Baseline year (2016)"))
+tempdat4 <- KEMRIpfpr_long %>%
+  filter(year >= 2003 & year <= 2016) %>%
+  dplyr::select(District, year, PfPR) %>%
+  left_join(tempdat)
 
+combDat2 <- KEMRIpfpr_long %>%
+  filter(year >= 2003 & year <= 2020) %>%
+  dplyr::select(District, year, PfPR) %>%
+  left_join(tempdat3) %>%
+  pivot_longer(cols = -c(District, Strata, Strata_withoutUrban, Population_2016, year)) %>%
+  mutate(name = ifelse(name == "PfPR", "MBG", "OM"),
+         value = as.numeric(value)) %>%
+  aggregatDat(c("Strata", "year", "name"), "value", "Population_2016", weightedAggr = weightedAggr)
 
-###================================
-### National 
-###================================
+tapply(combDat2$mean, combDat2$year, summary)
 
-### Change in prevalence between pre-intervention and baseline year
-## Description of historical trend, and additional variables
-groupVARS <- c("District", "Region", "urbanrural", "MIS_UMRC")
-prevCordat_wide <- as.data.table(prevCordat_wide, key = groupVARS)
+combDat3 <- KEMRIpfpr_long %>%
+  dplyr::select(District, year, PfPR) %>%
+  left_join(tempdat3) %>%
+  pivot_longer(cols = -c(District, Strata, Strata_withoutUrban, Population_2016, year)) %>%
+  mutate(name = ifelse(name == "PfPR", "MBG", "OM"),
+         value = as.numeric(value)) %>%
+  aggregatDat(c("Strata", "year", "name"), "value", "Population_2016", weightedAggr = weightedAggr)
 
-### 2003 to 2016
-prevCordat_wide[, PR.sim.diff.history := PR.sim[year == 2003] - PR.sim[year == 2016], by = groupVARS]
-prevCordat_wide[, PR.sim.diff.history.perc := ((PR.sim[year == 2003] - PR.sim[year == 2016]) / PR.sim[year == 2003]) * 100, by = groupVARS]
+tapply(combDat3$mean, combDat3$year, summary)
 
-prevCordat_wide[, PR.obs.diff.history := PR.obs[year == 2003] - PR.obs[year == 2016], by = groupVARS]
-prevCordat_wide[, PR.obs.diff.history.perc := ((PR.obs[year == 2003] - PR.obs[year == 2016]) / PR.obs[year == 2003]) * 100, by = groupVARS]
-
-summary(prevCordat_wide$PR.sim.diff.history)
-summary(prevCordat_wide$PR.obs.diff.history)
-
-summary(prevCordat_wide$PR.sim.diff.history.perc)
-summary(prevCordat_wide$PR.obs.diff.history.perc)
-
-### correlation, Concordance and bland altman plot
-#prevCordat_wide <- na.omit(prevCordat_wide)
-cor(prevCordat_wide[!is.na(prevCordat_wide$PR.sim) & !is.na(prevCordat_wide$PR.obs), "PR.sim"], prevCordat_wide[!is.na(prevCordat_wide$PR.sim) & !is.na(prevCordat_wide$PR.obs), "PR.obs"])
-CCC(prevCordat_wide$PR.sim, prevCordat_wide$PR.obs, ci = "z-transform", conf.level = 0.95, na.rm = TRUE)$rho.c
-
-## baseline year only 
-tempdat <- prevCordat_wide %>% filter(year == 2016 & !is.na(PR.sim) & !is.na(PR.obs))
-cor(tempdat$PR.sim, tempdat$PR.obs)
-CCC(tempdat$PR.sim, tempdat$PR.obs, ci = "z-transform", conf.level = 0.95, na.rm = TRUE)$rho.c
-
-pplot <- bland.altman.plot(tempdat$PR.sim, tempdat$PR.obs, graph.sys = "ggplot2", conf.int = .95, pch = 19)
-ggsave(paste0("BAplot_2016.png"), plot = pplot, path = ExperimentFigureDir, width = 8, height = 6, device = "png")
-rm(pplot)
-rm(tempdat)
-
-### all years - bland altman
-tempdat <- prevCordat_wide %>% filter(!is.na(PR.sim) & !is.na(PR.obs))
-
-pplot <- bland.altman.plot(tempdat$PR.sim, tempdat$PR.obs, graph.sys = "ggplot2", conf.int = .95, pch = 19)
-ggsave(paste0("BAplot_2003-2016.png"), plot = pplot, path = ExperimentFigureDir, width = 8, height = 6, device = "png")
-rm(pplot)
-
-corALLYEARS <- cor(tempdat[, "PR.obs"], tempdat[, "PR.sim"], method = c("pearson"))
-cccALLYEARS <- round(CCC(tempdat[, "PR.obs"], tempdat[, "PR.sim"], ci = "z-transform", conf.level = 0.95, na.rm = TRUE)$rho.c, 2)
-
-corcaptiontext <- paste0("Pearson's r 2003-2016 = ", round(corALLYEARS, 3))
-CCCcaptiontext <- paste0("CCC 2003-2016 = ", cccALLYEARS[1], " (95%CI: ", cccALLYEARS[2], ", ", cccALLYEARS[3], ")")
+combDat3_council <- KEMRIpfpr_long %>%
+  dplyr::select(District, year, PfPR) %>%
+  left_join(tempdat3b) %>%
+  mutate(MBG = PfPR, OMmean = mean, OMmean = mean, OMmedian = median, OMq2.5 = q2.5, OMq97.5 = q97.5) # %>%
+# gather(var, value, -c(District,  Strata,  year)) %>%
+# mutate(var = ifelse(var=="PfPR","MBG", "OM"))
+tapply(combDat3_council$mean, combDat3_council$year, summary)
 
 
-### Fitting plot - used for publication
-tempdat <- as.data.frame(subset(prevCordat_wide, timeperiod2 != "Historical trend"))
-lm2003 <- lm(PR.obs ~ PR.sim, data = subset(tempdat, year == 2003))
-cor2003 <- cor(tempdat[tempdat$year == 2003, "PR.obs"], tempdat[tempdat$year == 2003, "PR.sim"], method = c("pearson"))
-cor2016 <- cor(tempdat[tempdat$year == 2016, "PR.obs"], tempdat[tempdat$year == 2016, "PR.sim"], method = c("pearson"))
+#### for special timeline
+#### counterfactual
+load(file.path("simdat", "AnalysisDat.RData"))
+tempdat5 <- AnalysisDat %>%
+  filter(year %in% c(2016, 2017) &
+           counterfactual == 1 &
+           statistic == "median") %>%
+  mutate(Strategy = "counterfactual") %>%
+  dplyr::select(District, Strata, Population_2016, year, PR, Strategy)
 
-ccc2003 <- round(CCC(tempdat[tempdat$year == 2003, "PR.obs"], tempdat[tempdat$year == 2003, "PR.sim"], ci = "z-transform", conf.level = 0.95, na.rm = TRUE)$rho.c, 2)
-ccc2016 <- round(CCC(tempdat[tempdat$year == 2016, "PR.obs"], tempdat[tempdat$year == 2016, "PR.sim"], ci = "z-transform", conf.level = 0.95, na.rm = TRUE)$rho.c, 2)
+tempdat5 <- tempdat %>%
+  ungroup() %>%
+  filter(year < 2016) %>%
+  mutate(Strategy = "counterfactual") %>%
+  dplyr::select(District, Strata, Population_2016, year, PR, Strategy) %>%
+  bind_rows(tempdat5)
 
-tempdat$rvalue = cor2003
-tempdat$rvalue[tempdat$year == 2016] = cor2016
+combDat5 <- KEMRIpfpr_long %>%
+  filter(year >= 2003 & year <= 2020) %>%
+  dplyr::select(District, year, PfPR) %>%
+  merge(tempdat5) %>%
+  pivot_longer(cols = -c(District, Strata, Strategy, Population_2016, year)) %>%
+  mutate(name = ifelse(name == "PfPR", "MBG", "OM"),
+         value = as.numeric(value)) %>%
+  aggregatDat(c("Strategy", "Strata", "year", "name"), "value", "Population_2016", weightedAggr = weightedAggr)
 
-tempdat$cccvalue = paste0("CCC= ", ccc2003[1], " (95%CI: ", ccc2003[2], ", ", ccc2003[3], ")")
-tempdat$cccvalue[tempdat$year == 2016] = paste0("CCC= ", ccc2016[1], " (95%CI: ", ccc2016[2], ", ", ccc2016[3], ")")
 
-pplot <- ggplot(data = tempdat, aes(x = PR.obs, y = PR.sim, ymin = PRlo.sim, ymax = PRup.sim, label = paste0("Pearson's r = ", round(rvalue, 2)))) +
-  theme_cowplot() +
-  geom_errorbar(size = 1, alpha = 0.5, col = "lightblue") +
-  geom_point(shape = 21, size = 1.5, fill = "blue") +
-  geom_smooth(size = 1, method = "lm", se = FALSE, col = "indianred") +
-  geom_abline(intercept = 0, slope = 1, size = 0.7) +
-  geom_text(x = 11, y = 68, size = 5) +
-  labs(title = "",
-       subtitle = "",
-       x = expression("Geospatial predicted " *
-                        italic("Pf") *
-                        "PR"["2 to 10"] *
-                        " (%)"),
-       y = expression("OpenMalaria predicted " *
-                        italic("Pf") *
-                        "PR"["2 to 10"] *
-                        " (%)")) +
-  facet_wrap(~timeperiod2, nrow = 2, scales = "free") +
-  scale_y_continuous(limits = c(0, 70), breaks = seq(0, 70, 10), labels = seq(0, 70, 10)) +
-  scale_x_continuous(limits = c(0, 70), breaks = seq(0, 70, 10), labels = seq(0, 70, 10)) +
-  customTheme_noAngle +
-  theme(legend.position = "right")
-ggsave(paste0("fittingPlot_baseline_preIntervention.png"), plot = pplot, path = ExperimentFigureDir, width = 6, height = 10, device = "png")
+tapply(combDat5$mean.val, combDat5$year, summary)
+table(combDat5$year, combDat5$Strategy, exclude = NULL)
 
-pplot <- ggplot(data = tempdat, aes(x = PR.obs, y = PR.sim, ymin = PRlo.sim, ymax = PRup.sim, label = cccvalue)) +
-  theme_cowplot() +
-  geom_errorbar(size = 1, alpha = 0.5, col = "lightblue") +
-  geom_point(shape = 21, size = 1.5, fill = "blue") +
-  geom_smooth(size = 1, method = "lm", se = FALSE, col = "indianred") +
-  geom_abline(intercept = 0, slope = 1, size = 0.7) +
-  geom_text(x = 19, y = 68, size = 5) +
-  labs(title = "",
-       subtitle = "",
-       x = expression("Geospatial predicted " *
-                        italic("Pf") *
-                        "PR"["2 to 10"] *
-                        " (%)"),
-       y = expression("OpenMalaria predicted " *
-                        italic("Pf") *
-                        "PR"["2 to 10"] *
-                        " (%)"),
-       caption = CCCcaptiontext) +
-  facet_wrap(~timeperiod2, nrow = 2, scales = "free") +
-  scale_y_continuous(limits = c(0, 70), breaks = seq(0, 70, 10), labels = seq(0, 70, 10)) +
-  scale_x_continuous(limits = c(0, 70), breaks = seq(0, 70, 10), labels = seq(0, 70, 10)) +
-  customTheme_noAngle +
-  theme(legend.position = "right")
-ggsave(paste0("fittingPlot_baseline_preIntervention_CCC.png"), plot = pplot, path = ExperimentFigureDir, width = 6, height = 10, device = "png")
 
-##===============================
-## Subnational - region and district
-##===============================
-#### Comparison per region
-tapply(prevCordat_wide$PR.sim.diff.history, prevCordat_wide$Region, summary)
-tapply(prevCordat_wide$PR.obs.diff.history, prevCordat_wide$Region, summary)
+## -----------------------------------------
+#### Figure A2.2 - timeline in  additional file
+## -----------------------------------------
 
-tapply(prevCordat_wide$PR.sim.diff.history.perc, prevCordat_wide$Region, summary)
-tapply(prevCordat_wide$PR.obs.diff.history.perc, prevCordat_wide$Region, summary)
+p1 <- ggplot(data = subset(tempdat, statistic == 'median' & year <= 2016)) +
+  geom_line(aes(x = year, y = PR, group = District, col = Strata, span = 0.3), size = 0.8, alpha = 0.3) +
+  geom_line(data = subset(combDat3, name == 'OM' & year <= 2016), aes(x = year, y = mean.val, group = Strata), col = "grey25", size = 1.3) +
+  scale_color_manual(values = StrataCols) +
+  scale_fill_manual(values = StrataCols) +
+  facet_wrap(~Strata, scales = "free", nrow = 1) +
+  labs(x = "", y = expression("OM " * italic("PfPR")["2 to 10"] * " (%)")) +
+  theme_classic() +
+  theme(legend.position = "none")
 
-prevCordat_wide$PRobssim.ratio <- prevCordat_wide$PR.sim / prevCordat_wide$PR.obs
-prevCordat_wide$PRobssim.diff <- prevCordat_wide$PR.obs - prevCordat_wide$PR.sim
-summary(prevCordat_wide$PRobssim.diff)
+p2 <- ggplot(data = subset(tempdat2, year <= 2016)) +
+  geom_line(aes(x = year, y = PfPR, group = District, col = Strata, span = 0.3), size = 0.8, alpha = 0.3, se = FALSE) +
+  geom_line(data = subset(combDat3, name == 'MBG' & year <= 2016), aes(x = year, y = mean.val, group = Strata), col = "grey25", size = 1.3) +
+  scale_color_manual(values = StrataCols) +
+  scale_fill_manual(values = StrataCols) +
+  facet_wrap(~Strata, scales = "free", nrow = 1) +
+  labs(x = "", y = expression("MBG-" * italic("PfPR")["2 to 10"] * " (%)")) +
+  theme_classic() +
+  theme(legend.position = "none")
 
-###############################################
-tempdat <- as.data.frame(subset(prevCordat_wide, timeperiod2 != "Historical trend"))
-tempdat16 <- subset(tempdat, year == 2016)
-#tempdat16 	<- subset(tempdat, year==2003)
+p12 <- plot_grid(p1, p2, nrow = 2)
+ggsave("combined_timeline_perDis.png", plot = p12,
+       path = file.path("figures"), width = 13, height = 7, device = "png")
 
-###Write out minimum and maximum PR per region for positionining text lavels in plot (not used anymore, instead double facets used)
-DataCov2016 <- do.call(rbind, lapply(split(tempdat16, tempdat16$Region),
-                                     function(x) data.frame(group = x$Region[1], mCov = CCC(x$PR.obs, x$PR.sim, ci = "z-transform", conf.level = 0.95, na.rm = TRUE))))
 
-DataCov2016 %>%
-  dplyr::select(group, mCov.rho.c.est, mCov.rho.c.lwr.ci, mCov.rho.c.upr.ci) %>%
-  unique()
-
-DataCov2016 <- DataCov2016 %>%
-  dplyr::mutate(Region = group) %>%
-  dplyr::group_by(Region) %>%
-  dplyr::select(-group) %>%
-  dplyr::summarise_all(funs(mean)) %>%
-  left_join(tempdat16, by = "Region") %>%
-  mutate(cccvalue = paste0("CCC= ", round(mCov.rho.c.est, 2), "\n(95%CI: ", round(mCov.rho.c.lwr.ci, 2), ", ", round(mCov.rho.c.upr.ci, 2), ")")) %>%
-  as.data.frame()
-
-#### Create region labels used for facetting ,  including number of districts
-ndis <- DataCov2016 %>%
-  dplyr::select(Region, District) %>%
+## -----------------------------------------
+#### Boxplots PfPR for additional file
+## -----------------------------------------
+#########
+### calculate relative reduction since 2003
+sink(file.path(PaperCSVDir, "timeline prevalence.txt"))
+combDat5 %>%
+  dplyr::filter(year %in% c(2003, 2016) & Strategy == "counterfactual") %>%
+  dplyr::select(Strata, year, var, median.val) %>%
+  mutate(year = paste0("y", year)) %>%
   unique() %>%
-  group_by(Region) %>%
-  tally() %>%
-  as.data.frame()
-
-regsorted <- DataCov2016 %>%
-  left_join(ndis, by = "Region") %>%
-  mutate(RegionLabel = paste0(Region, " (", n, ")")) %>%
-  dplyr::arrange(mCov.rho.c.est) %>%
-  dplyr::select(Region, RegionLabel) %>%
-  unique()
-
-DataCov2016$RegionLabel <- factor(DataCov2016$Region,
-                                  levels = regsorted[, 1][c(length(regsorted[, 1]):1)],
-                                  labels = regsorted[, 2][c(length(regsorted[, 2]):1)])
-
-table(DataCov2016$RegionLabel, DataCov2016$Region, exclude = NULL)
-
-pplot <- ggplot(data = DataCov2016, aes(x = PR.obs, y = PR.sim, ymin = PRlo.sim, ymax = PRup.sim)) +
-  theme_cowplot() +
-  geom_errorbar(size = 1, alpha = 0.8, col = "lightblue") +
-  geom_point(shape = 21, size = 1.5, fill = "blue") +
-  geom_smooth(size = 1, method = "lm", se = FALSE, col = "indianred") +
-  geom_abline(intercept = 0, slope = 1, size = 0.7) +
-  labs(title = "",
-       subtitle = "",
-       x = expression("Geospatial predicted " *
-                        italic("Pf") *
-                        "PR"["2 to 10"] *
-                        " (%)"),
-       y = expression("OpenMalaria predicted " *
-                        italic("Pf") *
-                        "PR"["2 to 10"] *
-                        " (%)")) +
-  facet_wrap(~timeperiod2, nrow = 2, scales = "free") +
-  customTheme_noAngle +
-  theme(legend.position = "right") +
-  facet_wrap(RegionLabel ~ cccvalue, ncol = 5, scales = "free")
-if (SAVE)ggsave(paste0("fittingPlot_perRegion_2016.v3.png"), plot = pplot, path = ExperimentFigureDir, width = 20, height = 20, device = "png")
-#ggsave(paste0("fittingPlot_perRegion_2003.v2.png"), plot= pplot, path= ExperimentFigureDir ,width =20, height =20, device = "png")	
+  spread(year, median.val) %>%
+  mutate(PRhist03_16 = y2003 - y2016, PRhist03_16.perc = ((y2003 - y2016) / y2003) * 100)
 
 
-#### Historical trend 
-prevCordat$estimatesourceLabel <- "OpenMalaria pedicted PfPR"
-prevCordat$estimatesourceLabel[prevCordat$estimatesource != "sim"] <- "Geospatial predicted PfPR"
-table(prevCordat$estimatesourceLabel, prevCordat$estimatesource, exclude = NULL)
+combDat5 %>%
+  dplyr::filter(var == "OM" & year %in% c(2020)) %>%
+  dplyr::select(Strata, Strategy, year, var, median.val) %>%
+  mutate(year = paste0("y", year)) %>%
+  unique() %>%
+  spread(year, median.val)
+sink()
 
-prevCordat <- left_join(prevCordat, DataCov2016[, c("Region", "RegionLabel", "mCov.rho.c.est")], by = "Region")
-
-pplot <- ggplot(data = subset(prevCordat, year <= 2016)) +
-  theme_cowplot() +
-  geom_smooth(aes(x = year, y = PR, col = estimatesourceLabel, fill = estimatesourceLabel), size = 1.3, span = 1) +
-  labs(title = "",
-       subtitle = "",
-       x = "Year",
-       y = expression("Geospatial" *
-                        italic("PfPR") *
-                        " - OpenMalaria" *
-                        italic("PfPR")),
-       col = "Predicton method",
-       fill = "Predicton method") +
-  theme(legend.position = "none") +
-  #scale_x_continuous(breaks=c(2003:2016), labels=c(2003:2016))+
-  facet_wrap(~RegionLabel, scales = "free") +
-  scale_colour_manual(values = TwoCols) +
-  scale_fill_manual(values = TwoCols) +
-  customTheme_noAngle +
-  theme(legend.position = "top")
-if (SAVE)ggsave(paste0("fittingPlot_perRegion_historicalTrend.png"), plot = pplot, path = ExperimentFigureDir, width = 22, height = 12, device = "png")
-
-####or instead of using smooth, calculate mean and confidence intervals, or use median and 95% interquartile ranfe
-prevCordatReg <- aggrDat(prevCordat, c("RegionLabel", "Region", "year", "estimatesourceLabel"), "PR", WideToLong = FALSE)
-pplot <- ggplot(data = subset(prevCordatReg, year <= 2016), aes(x = year, y = median.val, ymin = lower.ci.val, ymax = upper.ci.val, col = estimatesourceLabel, fill = estimatesourceLabel)) +
-  theme_bw() +
-  geom_ribbon() +
-  geom_line() +
-  labs(title = "",
-       subtitle = "",
-       x = "Year",
-       y = expression("Geospatial" *
-                        italic("PfPR") *
-                        " - OpenMalaria" *
-                        italic("PfPR"))) +
-  theme(legend.position = "none") +
-  scale_x_continuous(breaks = c(2003:2016), labels = c(2003:2016)) +
-  facet_wrap(~RegionLabel, nrow = 4, scales = "free") +
-  scale_colour_manual(values = TwoCols) +
-  scale_fill_manual(values = TwoCols) +
-  customTheme_Angle
-if (SAVE) ggsave(paste0("fittingPlot_perRegion_v2_historicalTrend.png"), plot = pplot, path = ExperimentFigureDir, width = 18, height = 12, device = "png")
+combDat5$tempStrat <- factor(combDat5$StrategyLabel,
+                             levels = c("counterfactual", "NMSP with maintained CM", "NMSP with improved CM", "SMMSP"),
+                             label = c("counter\nfactual", "NMSP", "NMSP\nCM+", "SMMSP\nCM+")
+)
 
 
-#### Per district
-prevCordat_wide <- left_join(prevCordat_wide, DataCov2016[, c("Region", "RegionLabel")], by = "Region")
-
-## Plot	per districts grouped by region
-pplot <- ggplot(data = subset(prevCordat_wide, year <= 2016)) +
-  theme_bw() +
-  geom_smooth(aes(x = year, y = PRobssim.diff, group = District), size = 1, col = "deepskyblue2", alpha = 0.3, se = FALSE, span = 0.3) +
-  geom_smooth(aes(x = year, y = PRobssim.diff), size = 1.7, col = "indianred", fill = "indianred", span = 1, se = TRUE) +
-  geom_hline(yintercept = 1, col = "black", size = 1) +
-  labs(title = "",
-       subtitle = "",
-       x = "Year",
-       y = expression("Geospatial" *
-                        italic("PfPR") *
-                        " - OpenMalaria" *
-                        italic("PfPR"))) +
-  theme(legend.position = "none") +
-  scale_x_continuous(breaks = c(2003:2016), labels = c(2003:2016)) +
-  facet_wrap(~RegionLabel, nrow = 4) +
-  customTheme_Angle
-if (SAVE)ggsave(paste0("fittingPlot_diff_perDistrict.png"), plot = pplot, path = ExperimentFigureDir, width = 18, height = 12, device = "png")
+## -----------------------------------------
+#### Timeline plot and boxplots for main text
+## -----------------------------------------
+labsy <- c("2003", "'04", "'05", "'06", "'07", "'08", "'09", "'10", "'11", "'12", "'13", "'14", "'15", "2016", "'17", "'18", "'19", "2020", "'21", "'22")
+labsy1 <- c("2003", "'04", "'05", "'06", "'07", "'08", "'09", "'10", "'11", "'12", "'13", "'14", "'15", "2016", "'17", "'18", "'19", "2020")
+labsy2 <- c("2003", "", "'05", "", "'07", "", "'09", "", "'11", "", "'13", "", "'15", "'16")
+labsy3 <- c("2003", "'04", "'05", "'06", "'07", "'08", "'09", "'10", "'11", "'12", "'13", "'14", "'15", "2016", "'17")
 
 
-#### Other plots (older) 
-olderPlots = FALSE
-if (olderPlots) {
-  ## To Do - improve plot and add uncertainity intervals on both !
-  psimobs <- ggplot(data = subset(prevCordat_wide, (year %in% historicalYears) | (year == baselineYear))) +
-    geom_errorbar(aes(x = PR.obs, ymin = PRlo.sim, ymax = PRup.sim, col = MIS_UMRC), size = 1, alpha = 0.5) +
-    geom_point(aes(x = PR.obs, y = PR.sim, fill = MIS_UMRC), shape = 21, size = 2) +
-    geom_line(aes(x = PR.obs, y = PR.obs), size = 1.3) +
-    labs(title = "Comparison of simulated and target prevalence",
-         subtitle = "",
-         x = expression(italic("PfPR")["2 to 10"] * "\n'Observed'"),
-         y = expression(italic("PfPR")["2 to 10"] * " (OpenMalaria)"),
-         fill = "Timing MIS vs UMRC",
-         colour = "Timing MIS vs UMRC",
-         caption = paste0("'Observed prevalence' estimated by ", fittedprevalenceSource)) +
-    facet_wrap(~year, nrow = 2, scales = "free") +
-    customTheme_noAngle +
-    theme(legend.position = "right")
+lineLegend <- get_legend(ggplot() +
+                           theme_cowplot() +
+                           geom_line(
+                             data = subset(combDat5),
+                             aes(x = year, y = mean.val, group = interaction(Strata, name, Strategy),
+                                 linetype = interaction(Strategy)), size = 3
+                           ) +
+                           theme(legend.position = "right") +
+                           scale_linetype_manual(values = c("dotdash", "solid", "dashed", "dotted")) +
+                           theme_classic() +
+                           labs(linetype = "") +
+                           theme(legend.key.width = unit(4, "lines"), legend.key.height = unit(0.5, "lines"), legend.key.size = unit(2, "lines"), legend.text = element_text(size = 15)) +
+                           guides(linetype = guide_legend(nrow = 1)))
+plot(lineLegend)
 
-  psimobs_v2.1a <- ggplot(data = subset(prevCordat_wide, (year %in% c(baselineYear)))) +
-    geom_errorbar(aes(x = PR.obs, ymin = PRlo.sim, ymax = PRup.sim, col = MIS_UMRC), size = 1, alpha = 0.5) +
-    geom_point(aes(x = PR.obs, y = PR.sim, fill = MIS_UMRC), shape = 21, size = 2) +
-    geom_line(aes(x = PR.obs, y = PR.obs), size = 1.3) +
-    labs(title = "Baseline year",
-         subtitle = "",
-         x = expression(italic("PfPR")["2 to 10"] * " 'Observed'"),
-         y = expression(italic("PfPR")["2 to 10"] * " (OpenMalaria)"),
-         fill = "Timing MIS vs UMRC",
-         colour = "Timing MIS vs UMRC") +
-    facet_wrap(~year, scales = "free") +
-    customTheme_noAngle +
-    theme(legend.position = "right")
 
-  psimobs_v2.1b <- ggplot(data = subset(prevCordat_wide, (year %in% c(MonitoringStart)))) +
-    geom_errorbar(aes(x = PR.obs, ymin = PRlo.sim, ymax = PRup.sim, col = MIS_UMRC), size = 1, alpha = 0.5) +
-    geom_point(aes(x = PR.obs, y = PR.sim, fill = MIS_UMRC), shape = 21, size = 2) +
-    geom_line(aes(x = PR.obs, y = PR.obs), size = 1.3) +
-    labs(title = "Pre-intervention year",
-         subtitle = "",
-         x = expression(italic("PfPR")["2 to 10"] * "'Observed'"),
-         y = expression(italic("PfPR")["2 to 10"] * "(OpenMalaria)"),
-         fill = "Timing MIS vs UMRC",
-         colour = "Timing MIS vs UMRC") +
-    facet_wrap(~year, scales = "free") +
-    customTheme_noAngle +
-    theme(legend.position = "right")
+EndYear <- 2017
+s_labsy <- labsy3
 
-  psimobs_v2.2 <- ggplot(data = subset(prevCordat_wide, (year %in% historicalYears & !(year %in% c(baselineYear, MonitoringStart))))) +
-    geom_errorbar(aes(x = PR.obs, ymin = PRlo.sim, ymax = PRup.sim, col = MIS_UMRC), size = 1, alpha = 0.5) +
-    geom_point(aes(x = PR.obs, y = PR.sim, fill = MIS_UMRC), shape = 21, size = 2) +
-    geom_line(aes(x = PR.obs, y = PR.obs), size = 1.3) +
-    labs(title = "Historical trend",
-         subtitle = "",
-         x = expression(italic("PfPR")["2 to 10"] * " 'Observed'"),
-         y = expression(italic("PfPR")["2 to 10"] * " (OpenMalaria)"),
-         fill = "Timing MIS vs UMRC",
-         colour = "Timing MIS vs UMRC",
-         caption = paste0("'Observed prevalence' estimated by ", fittedprevalenceSource)) +
-    facet_wrap(~year, nrow = 1, scales = "free") +
-    customTheme_noAngle +
-    theme(legend.position = "none")
+count <- 0
+for (strata in unique(combDat5$Strata)) {
+  count <- count + 1
+  print(count)
+  # strata="urban"
 
-  ## alternativ
-  psimobs_v2.2b <- ggplot(data = subset(prevCordat_wide, (year %in% historicalYears & !(year %in% c(baselineYear, MonitoringStart))))) +
-    geom_boxplot(aes(x = year, y = (PR.obs / PR.sim), fill = MIS_UMRC, group = interaction(year, MIS_UMRC)), size = 1) +
-    labs(title = "Comparison of simulated and target prevalence",
-         subtitle = "",
-         fill = "Timing MIS vs UMRC",
-         colour = "Timing MIS vs UMRC",
-         caption = paste0("'Observed prevalence' estimated by ", fittedprevalenceSource)) +
-    customTheme_noAngle +
-    theme(legend.position = "bottom")
+  temp <- ggplot() +
+    annotate("rect", xmin = 2016, xmax = 2017, ymin = -Inf, ymax = Inf,
+             fill = "lightgrey", alpha = 0.5, size = 1.5) +
+    geom_vline(xintercept = c(2003, 2016)) +
+    # geom_vline(xintercept = c( 2020), linetype="dashed")+
+    #  geom_hline(yintercept = c(1,5,10,30), linetype="dashed", color="gray60")+
+    geom_ribbon(
+      data = subset(combDat5, Strata %in% strata & name == "OM"),
+      aes(x = year, ymax = upper.ci.val, ymin = lower.ci.val, group = interaction(Strata, name, Strategy), fill = Strata), alpha = 0.1
+    ) +
+    geom_line(
+      data = subset(combDat5, Strata %in% strata & (year <= 2016 | (year <= 2017 & name != "OM"))),
+      aes(x = year, y = mean.val, col = Strata, group = interaction(Strata, name, Strategy)), linetype = "solid", size = 1.7
+    ) +
+    geom_line(
+      data = subset(combDat5, Strata %in% strata & Strategy == "counterfactual"),
+      aes(x = year, y = mean.val, col = Strata, group = interaction(Strata, name)), size = 1.7
+    ) +
+    geom_point(
+      data = subset(combDat5, Strata %in% strata &
+        name != "OM" &
+        year %in% c(2003:2010, 2016)),
+      aes(x = year, y = mean.val, fill = Strata, group = interaction(Strata, name)), shape = 21, size = 3.5
+    ) +
+    geom_point(
+      data = subset(combDat5, Strata %in% strata &
+        name != "OM" &
+        !(year %in% c(2003:2010, 2016))),
+      aes(x = year, y = mean.val, group = interaction(Strata, name, Strategy)), shape = 21, size = 3.5, fill = "white"
+    ) +
+    geom_ribbon(data = subset(combDat5, Strata %in% strata &
+      name != "OM" &
+      year %in% c(2003:2016)), aes(x = year, ymin = lower.ci.val, ymax = upper.ci.val, fill = Strata), alpha = 0.1) +
+    theme(legend.position = "none") +
+    scale_color_manual(values = StrataCols) +
+    scale_fill_manual(values = StrataCols) +
+    scale_linetype_manual(values = c("dotdash", "solid", "dashed", "dotted")) +
+    scale_x_continuous(limits = c(2003, EndYear), labels = s_labsy, breaks = c(2003:EndYear)) +
+    labs(title = "", x = "", y = "", col = "Strata", linetype = "") +
+    scale_y_continuous(expand = c(0, 0)) +
+    theme_classic() +
+    theme(legend.position = "none") +
+    facet_wrap(~Strata) +
+    theme(
+      panel.spacing.x = unit(0, "line"),
+      strip.text.x = element_text(size = 18, face = "bold", hjust = 0, vjust = 0),
+      strip.text.y = element_text(size = 18, face = "bold"),
+      strip.placement = "outside",
+      strip.background = element_rect(colour = "white", fill = "white"),
+      plot.subtitle = element_text(hjust = -0.25, face = "bold", size = 18),
+      axis.text.x = element_text(size = 18),
+      axis.text.y = element_text(size = 18),
+      axis.title.x = element_text(size = 18),
+      axis.title.y = element_text(size = 18)
+    )
 
-  ptop <- f_grid_arrange_shared_legend(psimobs_v2.1b, psimobs_v2.1a, nrow = 1, ncol = 2, position = "right")
-  #psimobs2 <- grid.arrange(ptop, psimobs_v2.2,nrow=2,ncol=1, widths = 1:1,  heights=1:2)
-  psimobs2 <- grid.arrange(ptop, psimobs_v2.2, nrow = 2, ncol = 1)
-  #rm(psimobs_v2.1a,psimobs_v2.1b, psimobs_v2.2)
 
-  filename <- paste0("lack_of_fit_sim.obs_", historicalYears[1], "-", baselineYear)
-  if (SAVE)    ggsave(paste0(filename, ".png"), plot = psimobs, path = paste0(ExperimentFigureDir), width = 12, height = 7, device = "png")
-  if (SAVE)    ggsave(paste0(filename, "_v2.png"), plot = psimobs2, path = paste0(ExperimentFigureDir), width = 12, height = 7, device = "png")
-  if (SAVE)    ggsave(paste0(filename, "_v2_top.png"), plot = ptop, path = paste0(ExperimentFigureDir), width = 12, height = 7, device = "png")
+  if (count == 3) temp <- temp + labs(y = expression(italic("PfPR")["2 to 10"] * " (%)"))
+  if (count %in% c(1, 2, 3, 4)) {
+    temp <- temp + theme(
+      axis.title.x = element_blank(),
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank()
+    )
+  }
 
+
+  if (count == 1) temp1 <- temp
+  if (count == 2) temp2 <- temp
+  if (count == 3) temp3 <- temp
+  if (count == 4) temp4 <- temp
+  if (count == 5) temp5 <- temp
+
+  rm(temp)
 }
 
-
-##===============================================
-### Prevalence maps - observed vs fitted 
-## prevCordat, prevCordat_wide
-###================================================
-## reporting national population weighted mean on maps
-## at district level 
-tempdat <- prevCordat %>%
-  dplyr::filter(year %in% c(MonitoringStart, baselineYear) & !is.na(PR)) %>%
-  dplyr::mutate(
-    PR = PR / 100,
-    sourceLabel = ifelse(estimatesource == "obs", "'Observed PfPR estimates' ", "OpenMalaria predicted PfPR estimates"),
-    yearLabel = ifelse(year == 2003, "Pre-intervention year (2003)", "Baseline year (2016)")) %>%
-  as.data.frame()
-
-tempdat$yearLabel <- factor(tempdat$yearLabel,
-                            levels = c("Pre-intervention year (2003)", "Baseline year (2016)"),
-                            labels = c("Pre-intervention year (2003)", "Baseline year (2016)"))
-
-tempdat$PR.grp <- NA
-tempdat$PR.grp[which(tempdat$PR <= 0.01)] <- 1
-tempdat$PR.grp[which(tempdat$PR > 0.01 & tempdat$PR <= 0.05)] <- 2
-tempdat$PR.grp[which(tempdat$PR > 0.05 & tempdat$PR <= 0.10)] <- 3
-tempdat$PR.grp[which(tempdat$PR > 0.10 & tempdat$PR <= 0.25)] <- 4
-tempdat$PR.grp[which(tempdat$PR > 0.25 & tempdat$PR <= 0.50)] <- 5
-tempdat$PR.grp[which(tempdat$PR > 0.50)] <- 6
-table(tempdat$PR.grp, exclude = NULL)
-
-tempdat$PR.grp <- factor(as.character(tempdat$PR.grp),
-                         levels = c(1:6),
-                         labels = c("<=1", ">1-5", ">5-10", ">10-25", ">25-50", ">50"))
-
-table(tempdat$PR.grp, exclude = NULL)
-tempDat.df = dplyr::left_join(districts_sp.f, tempdat, by = "District")
-
-pmap <- ggplot(, warnings = FALSE) +
-  geom_polygon(data = subset(tempDat.df, !is.na(yearLabel) & !is.na(sourceLabel)),
-               aes(x = long, y = lat, group = group, fill = PR.grp), color = "white", size = 0.35) +
-  geom_polygon(data = regions_sp.f, aes(x = long, y = lat, group = group), color = "black", fill = NA, size = 0.75) +
-  labs(title = "",
-       fill = expression(italic("PfPR")["2 to 10"] * "(%)")) +
-  facet_grid(yearLabel ~ sourceLabel) +
-  map.theme +
-  prevLegend_cat
-
-if (SAVE)ggsave(paste0("MAP_FittedPrevalence_simobs_2003_2016.png"), plot = pmap, path = paste0(ExperimentFigureDir), width = 10, height = 10, device = "png")
-
-if (SAVE)save(prevCordat, prevCordat_wide, file = file.path(ExperimentDataDir, "prevCordat.RData"))
-
-ageConversionPlot = FALSE
-if (ageConversionPlot) {
-  #if(length(grep( "Refitted", ExperimentDir))<=0){
-
-  #### Age conversion ( if 0 to 5 not processed)
-
-  ## load lookup table 
-  conversionTableAge <- as.data.frame(read_excel(paste0(PfPRDataDir, "conversionTableAge.xlsx")))
-  model <- lm(PfPR_0to5 ~ poly(PfPR_2to10, 3), data = conversionTableAge)
-
-  tempprevdat <- JAGSresults %>%
-    left_join(TZADistrictDat[, c("Region", "District", "Population_2016")], by = "District") %>%
-    dplyr::filter(outcome == "PR" & (year %in% c(2012, 2016) | year == 2017 & FutScen_nr == 3)) %>%
-    dplyr::group_by(Region, District, Population_2016, year) %>%
-    dplyr::summarize(PR_2to10 = mean(median)) %>%
-    as.data.frame()
-
-  ## change to 0 to 5 
-  tempprevdat$PR_0to5 <- predict(model, data.frame(PfPR_2to10 = tempprevdat$PR_2to10))
-  ggplot(data = tempprevdat) +
-    geom_point(aes(x = PR_0to5 * 100, y = PR_2to10 * 100)) +
-    geom_line(aes(x = PR_0to5 * 100, y = PR_0to5 * 100)) +
-    theme_bw()
-
-  tapply(tempprevdat$PR_0to5, tempprevdat$year, summary)
-
-  ## Aggregate per region --- weighted by population!
-  predPfPRRegiondat <- tempprevdat %>%
-    dplyr::group_by(Region, year) %>%
-    dplyr::summarize(PRmean_0to5_wt = weighted.mean(PR_0to5, Population_2016),
-                     PRmean_0to5 = mean(PR_0to5)) %>%
-    as.data.frame()
-
-  predPfPRRegiondat$PR.grp <- NA
-  predPfPRRegiondat$PR.grp[which(predPfPRRegiondat$PRmean_0to5_wt <= 0.01)] <- 1
-  predPfPRRegiondat$PR.grp[which(predPfPRRegiondat$PRmean_0to5_wt > 0.01 & predPfPRRegiondat$PRmean_0to5_wt <= 0.05)] <- 2
-  predPfPRRegiondat$PR.grp[which(predPfPRRegiondat$PRmean_0to5_wt > 0.05 & predPfPRRegiondat$PRmean_0to5_wt <= 0.10)] <- 3
-  predPfPRRegiondat$PR.grp[which(predPfPRRegiondat$PRmean_0to5_wt > 0.10 & predPfPRRegiondat$PRmean_0to5_wt <= 0.25)] <- 4
-  predPfPRRegiondat$PR.grp[which(predPfPRRegiondat$PRmean_0to5_wt > 0.25 & predPfPRRegiondat$PRmean_0to5_wt <= 0.50)] <- 5
-  predPfPRRegiondat$PR.grp[which(predPfPRRegiondat$PRmean_0to5_wt > 0.50)] <- 6
-  table(predPfPRRegiondat$PR.grp, exclude = NULL)
-  predPfPRRegiondat$PR.grp <- factor(as.character(predPfPRRegiondat$PR.grp),
-                                     levels = c(1:6),
-                                     labels = c("<=1", ">1-5", ">5-10", ">10-25", ">25-50", ">50"))
-
-  table(predPfPRRegiondat$PR.grp, exclude = NULL)
-  tempDat.df = dplyr::left_join(regions_sp.f, predPfPRRegiondat, by = "Region")
-
-  pmap_sim <- ggplot(, warnings = FALSE) +
-    geom_polygon(data = tempDat.df,
-                 aes(x = long, y = lat, group = group, fill = PR.grp), color = "white", size = 0.35) +
-    geom_polygon(data = regions_sp.f, aes(x = long, y = lat, group = group), color = "black", fill = NA, size = 0.75) +
-    labs(title = "",
-         fill = expression(italic("PfPR")["0 to 5"] * "(%)")) +
-    facet_wrap(~year, ncol = 1) +
-    map.theme +
-    prevLegend_cat
+temptest2 <- plot_grid(temp1, temp2, temp3, temp4, temp5, ncol = 1, align = "v", rel_heights = c(1, 1, 1, 1, 1.5))
+intMaps <- plot_grid(temp1, temp2, temp3, temp4, temp5, nrow = 1)
 
 
-  ##########################################	
-  source("C:/Users/rungma/Projects/OM_TZA/Scripts/DataDescription_and_Preparation/PfPR/MIS_pfpr_maps.R")
+PR.simobs <- ggplot() +
+  geom_hline(yintercept = c(1, 5, 10, 30), linetype = "dashed", color = "gray60") +
+  geom_boxplot(
+    data = combDat,
+    aes(x = var, y = value, fill = Strata, group = interaction(var, Strata))
+  ) +
+  scale_fill_manual(values = StrataCols) +
+  labs(title = "", x = "", y = expression(italic("PfPR")["2 to 10"] * " (%)"), fill = "Strata") +
+  facet_grid(~Strata, scale = "free", space = "free", switch = "x") +
+  scale_y_continuous(breaks = c(1, 5, seq(0, 50, 10)), labels = c(1, 5, seq(0, 50, 10)), expand = c(0, 0)) +
+  theme_classic() +
+  theme(legend.position = "none", plot.subtitle = element_text(size = 18, hjust = 0)) +
+  customThemeNoFacet
+ggsave("combined_PfPR_simobs_boxplot.png", plot = PR.simobs,
+       path = file.path("figures"), width = 8, height = 5, device = "png")
 
-  predPfPRRegiondat$diagnostic = "microscopy"
-  predPfPRRegiondat$value = predPfPRRegiondat$PRmean_0to5_wt
-  predPfPRRegiondat$PR = predPfPRRegiondat$PRmean_0to5_wt
-  predPfPRRegiondat$source = "OpenMalaria predictions"
-  SCdat_long$source = "Malaria Indicator Surveys"
+
+PRbox <- ggplot() +
+  geom_hline(yintercept = c(1, 5, 10, 30), linetype = "dashed", color = "gray60") +
+  geom_boxplot(
+    data = subset(JAGSresults_wide, !is.na(Strata) &
+      FutScen_nr == 3 &
+      year == 2016 &
+      statistic == "median"),
+    aes(x = fct_rev(Strata), y = PR, fill = Strata), width = 0.5
+  ) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = StrataCols) +
+  labs(title = "", x = "", y = expression(italic("PfPR")["2 to 10"] * " (%)")) +
+  scale_y_continuous(breaks = c(1, 5, 10, 30, 100, 500), labels = c(1, 5, 10, 30, 100, 500), expand = c(0, 0)) +
+  theme_classic() +
+  theme(legend.position = "none", plot.subtitle = element_text(size = 18, hjust = 0)) +
+  labs(x = "\nbaseline prevalence", title = "", y = "") +
+  customThemeNoFacet_angle +
+  theme(plot.title = element_text(size = 14, face = "bold"), plot.subtitle = element_text(size = 14))
 
 
-  tempdat <- predPfPRRegiondat %>%
-    dplyr::select(colnames(SCdat_long)) %>%
-    rbind(SCdat_long) %>%
-    as.data.frame()
+EIRbox <- ggplot() +
+  geom_hline(yintercept = c(1, 5, 10, 30), linetype = "dashed", color = "gray60") +
+  geom_boxplot(
+    data = subset(JAGSresults_wide, !is.na(Strata) &
+      FutScen_nr == 3 &
+      year == 2016 &
+      statistic == "median"),
+    aes(x = Strata, y = EIR, fill = Strata), width = 0.5
+  ) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = StrataCols) +
+  labs(title = "", subtitle = "", x = "", y = "annual EIR on log scale") +
+  scale_y_continuous(trans = "log10", breaks = c(1, 5, 10, 30, 100, 500), labels = c(1, 5, 10, 30, 100, 500), expand = c(0, 0)) +
+  theme(legend.position = "none", plot.subtitle = element_text(size = 18, hjust = 0)) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"), plot.subtitle = element_text(size = 14),
+    axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank()
+  )
 
-  tempDat.df = dplyr::left_join(regions_sp.f, tempdat, by = "Region")
+ppEIRPR <- plot_grid(EIRbox, PR.simobs, nrow = 2, rel_widths = c(1, 1), labels = c("B)\n", "C)\n"), label_size = 22, hjust = 0, vjust = 1)
+pall <- plot_grid(temptest2, ppEIRPR, nrow = 1, rel_widths = c(1, 0.7), labels = c("A)\n", ""), label_size = 22, hjust = 0, vjust = 1)
 
-  pmap_sim <- ggplot(, warnings = FALSE) +
-    geom_polygon(data = subset(tempDat.df, diagnostic == "microscopy"),
-                 aes(x = long, y = lat, group = group, fill = PR.grp), color = "white", size = 0.35) +
-    geom_polygon(data = regions_sp.f, aes(x = long, y = lat, group = group), color = "black", fill = NA, size = 0.75) +
-    labs(title = "",
-         fill = expression(italic("PfPR")["2 to 10"] * "(%)")) +
-    facet_grid(source ~ year, , margins = "am") +
-    prevLegend_cat +
-    map.theme
-
-  if (SAVE)  ggsave(paste0("Map_MIS_simobs_region.png"), plot = pmap_sim, path = ExperimentFigureDir, width = 12, height = 9, device = "png")
-
-  rm(SCdat_long, predPfPRRegiondat, tempDat.df)
-
-}
+ggsave("timeline_simobs_boxplot.png", plot = pall,
+       path = file.path('figures'), width = 16, height = 12, device = "png")
 

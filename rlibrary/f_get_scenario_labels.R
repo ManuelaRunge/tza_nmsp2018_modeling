@@ -1,12 +1,14 @@
-#### add labels for future scenarios
-### run script that loads the data frame used for parameter estimation, which includes all scenarios and labels
 f_get_scenario_labels <- function(simout_dir) {
+                #' add labels for future scenarios
+                #' run script that loads the data frame used for parameter estimation, which includes all scenarios and labels
+                #'
   load(file.path(simout_dir, "DataForParameterEstimationCombined.Rdata"))
   #dummy 'C' and 'e' had been added in inital excel file, due to formatting weirdness
   colnames(SimDat) <- gsub("CfutITNcove", "futITNcov", colnames(SimDat))
-  colnames(SimDat) <- gsub("CfutSNPcove", "futSNPcov", colnames(SimDat)) #dummy 'e' had been added in inital excel file
+  colnames(SimDat) <- gsub("CfutSNPcove", "futSNPcov", colnames(SimDat))
 
   futVARS <- c("FutScen", "FutScen_nr", "CMincrease", "futITNcov", "futSNPcov", "futIRScov", "IPTcov", "FutureScenarios")
+
   dat <- SimDat %>%
     dplyr::filter(HistScen_nr == 1) %>%
     mutate(FutScen = gsub('__', '-', FutScen)) %>%
@@ -17,7 +19,6 @@ f_get_scenario_labels <- function(simout_dir) {
 
   futVARSNum <- c("futIRScov", "futITNcov", "futSNPcov", "IPTcov")
   dat[, futVARSNum] <- lapply(futVARSNum, function(x) as.numeric(as.character(dat[, x])))
-
 
   dat <- dat %>%
     mutate(futCMlabel = ifelse(CMincrease == "@Access2016@", 'current case management', '85% treatment of cases'),
@@ -40,9 +41,9 @@ f_get_scenario_labels <- function(simout_dir) {
                           ifelse(CMincrease == '@Access2016@' & futITNdep != 'no ITN', 'no increase in CM, ITN',
                                  ifelse(CMincrease != '@Access2016@' & futITNdep == 'no ITN', 'increase in CM, no ITN',
                                         ifelse(CMincrease != '@Access2016@' & futITNdep != 'no ITN', 'increase in CM and ITN', '')))),
-           FutScen_label1 = paste(futCMlabel, futITNlabel, futSNPlabel, futIRSlabel, futLARVlabel, futMDAlabel, sep = '-'),
-           FutScen_label2 = paste(CMITN, futIRSlabel, futLARVlabel, futMDAlabel, sep = '-'),
-           FutScen = paste(CMincrease, futITNcov, futSNPcov, futIRScov, FutureScenarios, sep = '-')
+           FutScen_label1 = paste(futCMlabel, futITNlabel, futSNPlabel, futIRSlabel, futLARVlabel, futMDAlabel, futIPTSClabel, sep = '-'),
+           FutScen_label2 = paste(CMITN, futIRSlabel, futLARVlabel, futMDAlabel, futIPTSClabel, sep = '-'),
+           FutScen = paste(CMincrease, futITNcov, futSNPcov, futIRScov, FutureScenarios, IPTcov, sep = '-')
     )
 
   dat <- dat %>%
@@ -59,9 +60,11 @@ f_get_scenario_labels <- function(simout_dir) {
            FutScen_label = ifelse(futITNcov != 0, gsub("ITN", "ITN MRC", FutScen_label), FutScen_label)
     )
 
+  dat$FutScen_label <- gsub('-no IPTsc', '', dat$FutScen_label)
   dat <- dat %>%
     mutate(FutScen_label_noCM = gsub("no increase in CM-", "", FutScen_label),
            FutScen_label_noCM = gsub("baseline", "counterfactual", FutScen_label_noCM),
+           FutScen_label_noCM = gsub("no CM only", "counterfactual", FutScen_label_noCM),
            FutScen_label_noCM = gsub("increase in CM - ", "", FutScen_label_noCM),
            FutScen_label_noCM = gsub("increase in CM$", "CM only", FutScen_label_noCM),
            FutScen_label_noCM = gsub("increase in CM-", "", FutScen_label_noCM),
@@ -71,9 +74,15 @@ f_get_scenario_labels <- function(simout_dir) {
            FutScen_label_noCM = gsub("ITNMRC", "ITN MRC", FutScen_label_noCM),
     )
 
+  ## transform intervention coverage variables to numeric, and divide by 100 if not a proportion
+  InterventionVars <- colnames(dat)[grep("cov", colnames(dat))]
+  (InterventionVars <- InterventionVars[!(InterventionVars %in% "FutScen_label_cov")])
 
+  dat[InterventionVars] <- apply(dat[InterventionVars], 2, function(x) { as.numeric(x) })
+  dat[InterventionVars] <- apply(dat[InterventionVars], 2, function(x) { ifelse(x > 1, x / 100, x) })
+  apply(dat[InterventionVars], 2, unique)
 
-
+  dat <- dat %>% dplyr::select(-c(FutScen_label1, FutScen_label2))
   return(dat)
 
 }

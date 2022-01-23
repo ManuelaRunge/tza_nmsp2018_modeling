@@ -1,7 +1,3 @@
-require(ggplot2)
-require(cowplot)
-require(scales)
-require(RColorBrewer)
 
 simPop <- 10000
 DistrictVersion <- "2018"
