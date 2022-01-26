@@ -3,14 +3,14 @@ cat(paste0('Start running 02_assess_fit_perRegion.R'))
 blandPlots = F
 fittedprevalenceSource <- "(KEMRI)"
 
-load(file.path('dat', "TZA_pfpr_Nov2018.RData"))  ## Requires access
+load(file.path('dat', 'pfpr_kemri', "TZA_pfpr_Nov2018.RData"))  ## Requires access
 ds.obs_long <- subset(ds.obs_long, source == "KEMRI")
 str(ds.obs_long)
 table(ds.obs_long$District, ds.obs_long$year)
 
 prevCordat1 <- ds.obs_long %>%
   dplyr::filter(AgeGroup == "2to10" & year >= 2003 & year <= 2017) %>%
-  dplyr::mutate(estimatesource = "obs", PR = value, PRlo = NA, PRup = NA) %>%
+  dplyr::mutate(estimatesource = "obs", PR = value*100, PRlo = NA, PRup = NA) %>%
   dplyr::select(District, year, PR, PRlo, PRup, estimatesource) %>%
   as.data.frame
 
@@ -20,7 +20,7 @@ load(file.path(simout_dir, "JAGSresults_wide.RData"))
 JAGSresults_wide <- JAGSresults_wide %>%
   filter(year <= 2017) %>%
   group_by(District, year, statistic) %>%
-  summarise(PR = mean(PR))
+  summarise(PR = mean(PR*100))
 table(JAGSresults_wide$District, JAGSresults_wide$year)
 
 prevCordat2 <- JAGSresults_wide %>%
@@ -88,6 +88,7 @@ if (blandPlots) {
   library('BlandAltmanLeh')
   pplot <- bland.altman.plot(tempdat$PR.sim, tempdat$PR.obs, graph.sys = "ggplot2", conf.int = .95, pch = 19)
   ggsave(paste0("BAplot_2016.png"), plot = pplot, path = file.path('figures'), width = 8, height = 6, device = "png")
+  ggsave(paste0("BAplot_2016.pdf"), plot = pplot, path = file.path('figures'), width = 8, height = 6, device = "pdf")
   rm(pplot)
   rm(tempdat)
 
@@ -95,6 +96,7 @@ if (blandPlots) {
   tempdat <- prevCordat_wide %>% filter(!is.na(PR.sim) & !is.na(PR.obs))
   pplot <- bland.altman.plot(tempdat$PR.sim, tempdat$PR.obs, graph.sys = "ggplot2", conf.int = .95, pch = 19)
   ggsave(paste0("BAplot_2003-2016.png"), plot = pplot, path = file.path('figures'), width = 8, height = 6, device = "png")
+  ggsave(paste0("BAplot_2003-2016.pdf"), plot = pplot, path = file.path('figures'), width = 8, height = 6, device = "pdf")
   rm(pplot)
 }
 
@@ -146,6 +148,8 @@ pplot <- ggplot(data = tempdat, aes(x = PR.obs, y = PR.sim, ymin = PRlo.sim, yma
 pplot
 ggsave(paste0("fittingPlot_baseline_preIntervention.png"), plot = pplot,
        path = file.path('figures'), width = 6, height = 10, device = "png")
+ggsave(paste0("fittingPlot_baseline_preIntervention.pdf"), plot = pplot,
+       path = file.path('figures'), width = 6, height = 10, device = "pdf")
 
 pplot <- ggplot(data = tempdat, aes(x = PR.obs, y = PR.sim, ymin = PRlo.sim, ymax = PRup.sim, label = cccvalue)) +
   theme_cowplot() +
@@ -173,6 +177,8 @@ pplot <- ggplot(data = tempdat, aes(x = PR.obs, y = PR.sim, ymin = PRlo.sim, yma
 pplot
 ggsave(paste0("fittingPlot_baseline_preIntervention_CCC.png"), plot = pplot,
        path = file.path('figures'), width = 6, height = 10, device = "png")
+ggsave(paste0("fittingPlot_baseline_preIntervention_CCC.pdf"), plot = pplot,
+       path = file.path('figures'), width = 6, height = 10, device = "pdf")
 
 ##===============================
 ## Subnational - region and district
@@ -274,6 +280,8 @@ pplot <- ggplot(data = DataCov2016, aes(x = PR.obs, y = PR.sim, ymin = PRlo.sim,
 pplot
 ggsave(paste0("fittingPlot_perRegion_2016.png"), plot = pplot,
        path = file.path('figures'), width = 20, height = 20, device = "png")
+ggsave(paste0("fittingPlot_perRegion_2016.pdf"), plot = pplot,
+       path = file.path('figures'), width = 20, height = 20, device = "pdf")
 
 
 #### Historical trend
@@ -304,13 +312,12 @@ pplot <- ggplot(data = subset(prevCordat, year <= 2016)) +
 pplot
 ggsave(paste0("fittingPlot_perRegion_historicalTrend.png"), plot = pplot,
        path = file.path('figures'), width = 22, height = 12, device = "png")
+ggsave(paste0("fittingPlot_perRegion_historicalTrend.pdf"), plot = pplot,
+       path = file.path('figures'), width = 22, height = 12, device = "pdf")
 
 ### instead of using smooth, calculate mean and confidence intervals, or use median and 95% interquartile range
-prevCordatReg <- f_weighted.aggrDat(prevCordat,
-                                    groupVars = c("Region", "year", "estimatesourceLabel"),
-                                    valueVar = "PR",
-                                    weightVar = "Population_2016",
-                                    WideToLong = FALSE)
+prevCordatReg <- aggregatDat(prevCordat,c("Region", "year", "estimatesourceLabel"), "PR", "Population_2016", weightedAggr = weightedAggr)
+
 
 pplot <- ggplot(data = subset(prevCordatReg, year <= 2016),
                 aes(x = year, y = median.val, ymin = lower.ci.val, ymax = upper.ci.val,
@@ -333,7 +340,8 @@ pplot <- ggplot(data = subset(prevCordatReg, year <= 2016),
 pplot
 ggsave(paste0("fittingPlot_perRegion_v2_historicalTrend.png"), plot = pplot,
        path = file.path("figures"), width = 18, height = 12, device = "png")
-
+ggsave(paste0("fittingPlot_perRegion_v2_historicalTrend.pdf"), plot = pplot,
+       path = file.path("figures"), width = 18, height = 12, device = "pdf")
 
 #### Per district
 prevCordat_wide <- left_join(prevCordat_wide, DataCov2016[, c("Region", "RegionLabel")], by = "Region")
@@ -359,3 +367,5 @@ pplot <- ggplot(data = subset(prevCordat_wide, year <= 2016)) +
 pplot
 ggsave(paste0("fittingPlot_diff_perDistrict.png"), plot = pplot,
        path = file.path('figures'), width = 18, height = 12, device = "png")
+ggsave(paste0("fittingPlot_diff_perDistrict.pdf"), plot = pplot,
+       path = file.path('figures'), width = 18, height = 12, device = "pdf")

@@ -15,12 +15,13 @@ load(file.path(simout_dir, "JAGSresults_wide.RData"))
 tempdat <- JAGSresults_wide %>%
   filter(year <= 2017) %>%
   group_by(District, Strata, Strata_withoutUrban, Population_2016, year, statistic) %>%
-  summarise(PR = mean(PR))
+  summarise(PR = mean(PR*100))
 table(tempdat$District, tempdat$year)
 
 combDat <- KEMRIpfpr_long %>%
   filter(year == 2016) %>%
   dplyr::select(District, year, PfPR) %>%
+  mutate(PfPR*100) %>%
   left_join(tempdat) %>%
   gather(var, value, -c(District, Strata, Strata_withoutUrban, Population_2016, year, statistic)) %>%
   mutate(var = ifelse(var == "PfPR", "MBG", "OM"))

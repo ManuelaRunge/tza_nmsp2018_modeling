@@ -1,7 +1,10 @@
 cat(paste0('Start running Figure6.R'))
 
 load(file.path("simdat", "AnalysisDat.RData"))
-AnalysisDat <- AnalysisDat %>% mutate(PR = PR * 100)
+AnalysisDat <- AnalysisDat %>% 
+  mutate(PR = PR * 100) %>%
+  filter(year==2020 & statistic=='median')
+
 NMSPdat_long <- f_load_nmsp_scendat()
 
 AnalysisDat2 <- inner_join(AnalysisDat, NMSPdat_long[, c('District', 'FutScen', 'Strategy', 'Strategy_FutScen_nr')])
@@ -16,8 +19,7 @@ AnalysisDat2$incidence <- (AnalysisDat2$Cases / simPop) * 1000
 
 ## PRdiff.baseline.perc
 Disdat1 <- AnalysisDat2 %>%
-  dplyr::filter(year == 2020 &
-                  Strategy %in% selectedStrategies) %>%
+  dplyr::filter(Strategy %in% selectedStrategies) %>%
   dplyr::select(District, statistic, Population_2016, Strata, Strategy, PR) %>%
   pivot_wider(names_from = Strategy, values_from = PR) %>%
   mutate(outcome = "PR",
@@ -28,8 +30,7 @@ dim(Disdat1)
 table(Disdat1$District, Disdat1$statistic)
 
 Disdat2 <- AnalysisDat2 %>%
-  dplyr::filter(year == 2020 &
-                  Strategy %in% selectedStrategies) %>%
+  dplyr::filter( Strategy %in% selectedStrategies) %>%
   dplyr::select(District, statistic, Population_2016, Strata, Strategy, Cases.pP) %>%
   spread(Strategy, Cases.pP) %>%
   mutate(
@@ -39,8 +40,7 @@ Disdat2 <- AnalysisDat2 %>%
   as.data.frame()
 
 Disdat2b <- AnalysisDat2 %>%
-  dplyr::filter(year == 2020 &
-                  Strategy %in% selectedStrategies) %>%
+  dplyr::filter(Strategy %in% selectedStrategies) %>%
   dplyr::select(District, statistic, Population_2016, Strata, Strategy, incidence) %>%
   spread(Strategy, incidence) %>%
   mutate(
@@ -54,14 +54,14 @@ Disdat <- rbind(Disdat1, Disdat2, Disdat2b)
 Disdat$newBetterThanOld <- "old better"
 Disdat$newBetterThanOld[Disdat$revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM < Disdat$NMSPcurrent.withCM] <- "new better"
 
-table(Disdat$outcome[Disdat$statistic == "median"], Disdat$newBetterThanOld[Disdat$statistic == "median"], exclude = NULL)
+table(Disdat$outcome, Disdat$newBetterThanOld, exclude = NULL)
 
 Disdat <- Disdat %>%
-  dplyr::group_by(District, statistic, Population_2016) %>%
-  dplyr::arrange(District, statistic, Population_2016) %>%
+  dplyr::group_by(District,  Population_2016) %>%
+  dplyr::arrange(District,  Population_2016) %>%
   dplyr::mutate(Levels = ifelse(nlevels(as.factor(newBetterThanOld)) > 1, "No", "Yes"))
 
-table(Disdat$outcome[Disdat$statistic == "median"], Disdat$Levels[Disdat$statistic == "median"])
+table(Disdat$outcome, Disdat$Levels)
 
 Disdat$outcome_lbl <- factor(Disdat$outcome,
                              levels = c("Cases.pP", "PR", "incidence"),
@@ -71,7 +71,7 @@ Disdat$outcome_lbl <- factor(Disdat$outcome,
 
 ### calculate mean per strata to be added in plot
 DisdatAggr <- Disdat %>%
-  dplyr::group_by(Strata, statistic, outcome, outcome_lbl) %>%
+  dplyr::group_by(Strata, outcome, outcome_lbl) %>%
   dplyr::summarize(
     relNMSPoldnewAggr = mean(relNMSPoldnew),
     relNMSPoldnewAggr_w = weighted.mean(relNMSPoldnew, w = Population_2016)
@@ -85,7 +85,7 @@ Disdat$StrataLabel <- factor(Disdat$Strata,
 ### add arrow indicated that the plot was truncated at -2 (goes up to -6)
 ### to do add errorbars from posterior for each district?
 table(Disdat$outcome)
-pplot <- ggplot(data = subset(Disdat, outcome != 'Cases.pP' & statistic == "median")) +
+pplot <- ggplot(data = subset(Disdat, outcome != 'Cases.pP')) +
   theme_cowplot() +
   geom_errorbarh(aes(
     x = (NMSPcurrent.withCM / NMSPcurrent.withCM),
@@ -133,4 +133,9 @@ pplot <- ggplot(data = subset(Disdat, outcome != 'Cases.pP' & statistic == "medi
 ggsave(paste0("Fig_6.png"), plot = pplot, path = file.path("figures"), width = 10, height = 12, device = "png")
 ggsave(paste0("Fig_6.pdf"), plot = pplot, path = file.path("figures"), width = 10, height = 12, device = "pdf")
 
-fwrite(Disdat, file.path('figures', 'figuredat', 'Fig6_Disdat.csv'))
+
+fwrite(AnalysisDat2,file.path('figures', 'figuredat', 'AnalysisDat2.csv'))
+
+Disdat %>% dplyr::select(-outcome_lbl) %>% fwrite(file.path('figures', 'figuredat', 'Fig6_Disdat.csv'))
+DisdatAggr %>% dplyr::select(-outcome_lbl) %>%  fwrite(file.path('figures', 'figuredat', 'Fig6_DisdatAggr.csv'))
+

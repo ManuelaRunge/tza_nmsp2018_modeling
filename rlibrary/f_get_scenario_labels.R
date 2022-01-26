@@ -52,7 +52,7 @@ f_get_scenario_labels <- function(simout_dir) {
            FutScen_label = gsub("-no LARV", "", FutScen_label),
            FutScen_label = gsub(", no ITN", "", FutScen_label),
            FutScen_label = gsub("no increase in CM, ", "", FutScen_label),
-           FutSen_label = gsub("-no IPTsc", "", FutScen_label),
+           FutScen_label = gsub("-no IPTsc", "", FutScen_label),
            FutScen_label = gsub("no increase in CM, no ITN-", "", FutScen_label),
            FutScen_label = gsub("and", "-", FutScen_label),
            FutScen_label = ifelse(FutScen_label == "no increase in CM", "baseline", FutScen_label),

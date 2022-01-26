@@ -6,14 +6,22 @@ table(AnalysisDat2$Strategy, AnalysisDat2$CMincrease)
 
 #### Additional interventions
 tempname <- c(
-  "revNMSP8b_new_IPTscHighOnly_SMCmoderat_noLSM_withMDAinvlow", "revNMSP4d_adj_CMall_withIPTsc_MDA_noLARV_inVeryLow",
-  "revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM", "revNMSP4c_adj_CMall_withIPTsc_LARVurbanOnly",
-  "revNMSP4b_adj_CMall_withIPTsc", "revNMSP4a_adj_CMall",
-  "NMSPcurrent.withCM", "NMSPcurrent.withCM_noITNinLow",
-  "revNMSP3b_adj_withIPTsc", "revNMSP3a_adj",
-  "revNMSP7d_adj_VConly_withIPTsc_MDA_noLARV_inVeryLow", "revNMSP7b_adj_VConly_withIPTsc",
-  "revNMSP7c_adj_VConly_withIPTsc_LARVurbanOnly", "revNMSP9a_noCM_new_IPTscHighOnly_SMCmoderat_noLSM",
-  "revNMSP7a_adj_VConly", "NMSPcurrent"
+  "revNMSP8b_new_IPTscHighOnly_SMCmoderat_noLSM_withMDAinvlow", 
+  "revNMSP4d_adj_CMall_withIPTsc_MDA_noLARV_inVeryLow",
+  "revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM", 
+  "revNMSP4c_adj_CMall_withIPTsc_LARVurbanOnly",
+  "revNMSP4b_adj_CMall_withIPTsc", 
+  "revNMSP4a_adj_CMall",
+  "NMSPcurrent.withCM", 
+  "NMSPcurrent.withCM_noITNinLow",
+  "revNMSP3b_adj_withIPTsc", 
+  "revNMSP3a_adj",
+  "revNMSP7d_adj_VConly_withIPTsc_MDA_noLARV_inVeryLow", 
+  "revNMSP7b_adj_VConly_withIPTsc",
+  "revNMSP7c_adj_VConly_withIPTsc_LARVurbanOnly", 
+  "revNMSP9a_noCM_new_IPTscHighOnly_SMCmoderat_noLSM",
+  "revNMSP7a_adj_VConly", 
+  "NMSPcurrent"
 )
 
 tempnr <- c(1:length(tempname))
@@ -26,61 +34,186 @@ AnalysisDat2$Strategy_label_noCM <- paste(AnalysisDat2$StrategyGrp, AnalysisDat2
 AnalysisDat2$StrategyOrdered_nr <- factor(AnalysisDat2$Strategy, levels = c(tempname), labels = c(tempnr))
 unique(AnalysisDat2$Strategy_label_noCM)
 
-AnalysisDat2$StrategyNEW <- NA
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "NMSPcurrent"] <- "1A_VC only"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "NMSPcurrent.withCM"] <- "1A_with CM"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "NMSPcurrent.withCM_noITNinLow"] <- "1B_with CM, no ITN in low"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP3a_adj"] <- "3A_no IPTsc"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP3b_adj_withIPTsc"] <- "3B_IPTsc"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP4a_adj_CMall"] <- "4A_CM all"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP4b_adj_CMall_withIPTsc"] <- "4B_CM al with IPTsc"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP4c_adj_CMall_withIPTsc_LARVurbanOnly"] <- "4C_CM al with IPTsc, LSM urban only"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP4d_adj_CMall_withIPTsc_MDA_noLARV_inVeryLow"] <- "4D_CM al with IPTsc, MDA in very low"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP7a_adj_VConly"] <- "4A_VC only all"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP7b_adj_VConly_withIPTsc"] <- "4B_VC only al with IPTsc"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP7c_adj_VConly_withIPTsc_LARVurbanOnly"] <- "4C_VC only al with IPTsc, LSM urban only"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP7d_adj_VConly_withIPTsc_MDA_noLARV_inVeryLow"] <- "4D_VC only al with IPTsc, MDA in very low"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM"] <- "8A_IPTsc in high only, SMC moderate"
-AnalysisDat2$StrategyNEW[AnalysisDat2$Strategy == "revNMSP8b_new_IPTscHighOnly_SMCmoderat_noLSM_withMDAinvlow"] <- "8B_IPTsc in high only, SMC moderate, MDA in very low"
-table(AnalysisDat2$StrategyNEW)
-
-AnalysisDat2$StrategyTOSEP <- AnalysisDat2$StrategyNEW
-AnalysisDat2 <- AnalysisDat2 %>% separate(StrategyNEW, into = c("StrategyID", "StrategyLBL"), sep = "_")
-AnalysisDat2 %>%
-  dplyr::select(StrategyGrp, StrategyID, StrategyOrdered_nr) %>%
-  unique()
-
 
 ### not all strategies as defined in excel included in NMSP dat - check
 length(unique(NMSPdat_long$Strategy))
 length(unique(AnalysisDat2$Strategy))
 table(AnalysisDat2$Strategy, AnalysisDat2$Strata)
+table(NMSPdat_long$Strategy, NMSPdat_long$Strata)
 
-verylowScen <- AnalysisDat2 %>%
-  filter(Strata == "very low" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
-  dplyr::select(FutScen_nr) %>%
-  unique()
 
-lowScen <- AnalysisDat2 %>%
-  filter(Strata == "low" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
-  dplyr::select(FutScen_nr) %>%
-  unique()
+get_ScenDat <- function(df=data.frame()){
+  
+  verylowScen_CM_addon=c()
+  lowScen_CM_addon=c()
+  urbanScen_CM_addon=c()
+  moderateScen_CM_addon=c()
+  highScen_CM_addon=c()
+  
+  if(nrow(df)>1){
 
-urbanScen <- AnalysisDat2 %>%
-  filter(Strata == "urban" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
-  dplyr::select(FutScen_nr) %>%
-  unique()
+    AnalysisDat <- AnalysisDat %>%mutate(FutScen_noCM = gsub('@Access2016@-','',FutScen),
+                                           FutScen_noCM =  gsub('0.6057272-','',FutScen_noCM))
 
-moderateScen <- AnalysisDat2 %>%
-  filter(Strata == "moderate" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
-  dplyr::select(FutScen_nr) %>%
-  unique()
+    df <- df %>% left_join(unique(AnalysisDat[,c('Strata','FutScen_noCM','FutScen_nr')]), all.x=TRUE)
+    
+    verylowScen_CM_addon = df$FutScen_nr[df$Strata=='very low']
+    lowScen_CM_addon = df$FutScen_nr[df$Strata=='low']
+    urbanScen_CM_addon = df$FutScen_nr[df$Strata=='urban']
+    moderateScen_CM_addon = df$FutScen_nr[df$Strata=='moderate']
+    highScen_CM_addon = df$FutScen_nr[df$Strata=='high']
+  }
+  
+  
+  
+  verylowScen <- AnalysisDat2 %>%
+    filter(Strata == "very low" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
+    dplyr::select(FutScen_nr) %>%
+    unique()
+  verylowScen <- unique(c(verylowScen$FutScen_nr,verylowScen_CM_addon))
+  
+  lowScen <- AnalysisDat2 %>%
+    filter(Strata == "low" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
+    dplyr::select(FutScen_nr) %>%
+    unique()
+  lowScen <- unique(c(lowScen$FutScen_nr,lowScen_CM_addon))
+  
+  
+  urbanScen <- AnalysisDat2 %>%
+    filter(Strata == "urban" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
+    dplyr::select(FutScen_nr) %>%
+    unique()
+  urbanScen <- unique(c(urbanScen$FutScen_nr,urbanScen_CM_addon))
+  
+  
+  moderateScen <- AnalysisDat2 %>%
+    filter(Strata == "moderate" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
+    dplyr::select(FutScen_nr) %>%
+    unique()
+  moderateScen <- unique(c(moderateScen$FutScen_nr,moderateScen_CM_addon))
+  
+  
+  highScen <- AnalysisDat2 %>%
+    filter(Strata == "high" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
+    dplyr::select(FutScen_nr) %>%
+    unique()
+  highScen <- unique(c(highScen$FutScen_nr,highScen_CM_addon))
+  
+  groupVars <- c("Strata", "year", "CMincrease", "FutScen","FutScen_nr", "FutScen_label_noCM","futSNPcov")
+  verylowScenDat <- AnalysisDat %>%
+    filter(Strata == "very low" &
+             FutScen_nr %in% verylowScen &
+             year == 2020) %>%
+    aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
+  
+  lowScenDat <- AnalysisDat %>%
+    filter(Strata == "low" &
+             FutScen_nr %in% lowScen &
+             year == 2020) %>%
+    aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
+  
+  urbanScenDat <- AnalysisDat %>%
+    filter(Strata == "urban" &
+             FutScen_nr %in% urbanScen &
+             year == 2020) %>%
+    aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
+  
+  moderateScenDat <- AnalysisDat %>%
+    filter(Strata == "moderate" &
+             FutScen_nr %in% moderateScen &
+             year == 2020) %>%
+    aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
+  
+  highScenDat <- AnalysisDat %>%
+    filter(Strata == "high" &
+             FutScen_nr %in% highScen &
+             year == 2020) %>%
+    aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
+  
 
-highScen <- AnalysisDat2 %>%
-  filter(Strata == "high" & Strategy_FutScen_nr == Strategy_FutScen_nr) %>%
-  dplyr::select(FutScen_nr) %>%
-  unique()
+  ### ScenDat
+  ScenDat <- as.data.frame(rbind(verylowScenDat, lowScenDat, urbanScenDat, moderateScenDat, highScenDat))
+  
+  return(ScenDat)
+  
+}
 
+
+ScenDat <- get_ScenDat()
+unique(ScenDat$FutScen_label_noCM)
+ScenDat %>% dplyr::select(Strata,FutScen_label_noCM,FutScen_nr,CMincrease) %>% unique() %>%
+  group_by(Strata,CMincrease,FutScen_label_noCM) %>% 
+  pivot_wider(names_from=CMincrease, values_from=FutScen_nr) %>%
+  as.data.frame()
+
+
+df <- ScenDat %>% dplyr::select(Strata,FutScen,FutScen_label_noCM,FutScen_nr,CMincrease) %>% unique() %>%
+  mutate(FutScen_noCM = gsub('@Access2016@-','',FutScen),
+         FutScen_noCM =  gsub('0.6057272-','',FutScen_noCM)) %>%
+  group_by(Strata,FutScen_noCM) %>%
+  tally() %>%
+  filter(n==1)  %>%
+  dplyr::select(Strata, FutScen_noCM)
+
+if(nrow(df)>1){
+  #redo_selection
+  ScenDat <- get_ScenDat(df)
+}
+
+
+
+## Clean up labels for plot
+
+ScenDat$FutScen_label_noCM <- gsub("LARV", "LSM", ScenDat$FutScen_label_noCM)
+
+ScenDat <- ScenDat %>%
+  mutate(
+    FutScen_label_noCM = gsub("+continuous", "SNP", FutScen_label_noCM),
+    FutScen_label_noCM = gsub("ITN continuous", "ITN(SNP)", FutScen_label_noCM),
+    FutScen_label_noCM = gsub("ITN MRC", "ITN(MRC)", FutScen_label_noCM),
+    FutScen_label_noCM = gsub(" ", "", FutScen_label_noCM),
+    FutScen_label_noCM = gsub("noCMonly", "CMonly", FutScen_label_noCM),
+    FutScen_label_noCM = gsub("ITNSNP", "ITN(SNP)", FutScen_label_noCM),
+    FutScen_label_noCM = gsub("MRC[+]SNP", "MRC,SNP", FutScen_label_noCM),
+    FutScen_label_noCM = gsub("[+]", " + ", FutScen_label_noCM)
+  ) %>%
+  mutate(FutScen_label_noCM = ifelse(futSNPcov == 0.7, gsub('SNP','SNP',FutScen_label_noCM), 
+                                     ifelse(futSNPcov==0.4,gsub('SNP','SNP*',FutScen_label_noCM),
+                                            FutScen_label_noCM))) 
+
+
+
+FutScen_label_noCM_fct <- c("counterfactual"   
+                            ,"CMonly"                       
+                            ,"ITN(MRC)"               
+                            ,"LSM"                    
+                            ,"MDA"        
+                            ,"ITN(SNP*)"              
+                            ,"ITN(SNP)"               
+                            ,"ITN(MRC)+LSM"     
+                            ,"ITN(SNP*)+LSM"                    
+                            ,"ITN(SNP)+LSM"           
+                            ,"ITN(SNP)+IPTsc"  
+                            ,"ITN(SNP)+IRS"  
+                            ,"ITN(MRC+SNP*)"   
+                            ,"ITN(MRC+SNP)" 
+                            ,"ITN(MRC+SNP)+LSM"   
+                            ,"ITN(MRC+SNP)+IRS"       
+                            ,"ITN(SNP)+IRS+IPTsc"
+                            ,"ITN(MRC+SNP)+LSM+IPTsc" 
+                            ,"ITN(MRC+SNP)+IRS+IPTsc")
+FutScen_label_noCM_fct <- gsub('MRC[+]SNP','MRC,SNP',FutScen_label_noCM_fct)
+FutScen_label_noCM_fct <- gsub('[+]',' + ',FutScen_label_noCM_fct)
+
+ScenDat$FutScen_label_noCM <- factor(ScenDat$FutScen_label_noCM,
+                                     levels=rev(FutScen_label_noCM_fct),
+                                     labels=rev(FutScen_label_noCM_fct))
+
+
+
+
+#####################
+### Selected strategy per strata
 verylowFinal <- AnalysisDat2 %>%
   filter(Strata == "very low" & Strategy == selectedStrategies[2]) %>%
   dplyr::select(FutScen_nr, Strategy, FutScen_nr) %>%
@@ -105,78 +238,3 @@ highFinal <- AnalysisDat2 %>%
   filter(Strata == "high" & Strategy == selectedStrategies[2]) %>%
   dplyr::select(FutScen_nr, Strategy, FutScen_nr) %>%
   unique()
-
-
-groupVars <- c("Strata", "year", "CMincrease", "FutScen_nr", "FutScen_label_noCM")
-verylowScenDat <- AnalysisDat %>%
-  filter(Strata == "very low" &
-           FutScen_nr %in% verylowScen$FutScen_nr &
-           year == 2020) %>%
-  aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
-
-lowScenDat <- AnalysisDat %>%
-  filter(Strata == "low" &
-           FutScen_nr %in% lowScen$FutScen_nr &
-           year == 2020) %>%
-  aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
-
-urbanScenDat <- AnalysisDat %>%
-  filter(Strata == "urban" &
-           FutScen_nr %in% urbanScen$FutScen_nr &
-           year == 2020) %>%
-  aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
-
-moderateScenDat <- AnalysisDat %>%
-  filter(Strata == "moderate" &
-           FutScen_nr %in% moderateScen$FutScen_nr &
-           year == 2020) %>%
-  aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
-
-highScenDat <- AnalysisDat %>%
-  filter(Strata == "high" &
-           FutScen_nr %in% highScen$FutScen_nr &
-           year == 2020) %>%
-  aggregatDat(groupVars, "PR", "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
-
-
-verylowREV <- verylowScenDat %>%
-  filter(Strata == "very low" & FutScen_nr %in% verylowFinal$FutScen_nr) %>%
-  dplyr::select(Strata, mean.val) %>%
-  unique()
-
-lowREV <- lowScenDat %>%
-  filter(Strata == "low" & FutScen_nr %in% lowFinal$FutScen_nr) %>%
-  dplyr::select(Strata, mean.val) %>%
-  unique()
-
-urbanREV <- urbanScenDat %>%
-  filter(Strata == "urban" & FutScen_nr %in% urbanFinal$FutScen_nr) %>%
-  dplyr::select(Strata, mean.val) %>%
-  unique()
-
-moderateREV <- moderateScenDat %>%
-  filter(Strata == "moderate" & FutScen_nr %in% moderateFinal$FutScen_nr) %>%
-  dplyr::select(Strata, mean.val) %>%
-  unique()
-
-highREV <- highScenDat %>%
-  filter(Strata == "high" & FutScen_nr %in% highFinal$FutScen_nr) %>%
-  dplyr::select(Strata, mean.val) %>%
-  unique()
-
-REV <- as.data.frame(rbind(verylowREV, lowREV, urbanREV, moderateREV, highREV))
-# REV <-as.data.frame( rbind(verylowREV ,	 lowREV ,		 urbanREV ,	 moderateREV ,   highREV))
-ScenDat <- as.data.frame(rbind(verylowScenDat, lowScenDat, urbanScenDat, moderateScenDat, highScenDat))
-
-table(ScenDat$Strata)
-ScenDat$StrataLabel2 <- factor(ScenDat$Strata,
-                               levels = c("very low", "low", "urban", "moderate", "high"),
-                               labels = c("very low (6)", "low (5)", "urban (9)", "moderate (6)", "high (11)")
-)
-
-## give new number
-ScenDat <- ScenDat %>% mutate(FutScen_label_noCM_num = as.numeric(as.factor(FutScen_label_noCM)))
-
-ScenDat$Intervention_plusID <- paste0(ScenDat$FutScen_label_noCM, " (", ScenDat$FutScen_label_noCM_num, ")")
-ScenDat$FutScen_label_noCM <- gsub("LARV", "LSM", ScenDat$FutScen_label_noCM)
-

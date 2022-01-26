@@ -54,20 +54,41 @@ ggsave("Fig_1map.png", plot = pplot, path = 'figures', width = 12, height = 10, 
 ##---------------------------------------------
 ### Separate by intervention
 ##---------------------------------------------
-load(file.path("simdat", "AnalysisDat2.RData"))  # Fixme
+load(file.path("simdat", "AnalysisDat.RData"))
+AnalysisDat <- AnalysisDat %>% 
+  mutate(PR = PR * 100) %>%
+  filter(year==2020 & statistic=='median')
+
+NMSPdat_long <- f_load_nmsp_scendat()
+
+AnalysisDat2 <- full_join(AnalysisDat, NMSPdat_long[, c('District', 'FutScen', 'Strategy', 'Strategy_FutScen_nr')]) %>%
+  filter(!(is.na(Strategy)))
+dim(AnalysisDat2)
+
+table(AnalysisDat2$Strategy, AnalysisDat2$CMincrease, exclude = NULL)
+length(unique(NMSPdat_long$Strategy))
+length(unique(AnalysisDat2$Strategy))
+
+AnalysisDat2 %>%
+  filter(Strategy %in% selectedStrategies) %>% 
+  dplyr::select(Strata,Strategy,FutScen_nr,FutScen) %>% 
+  unique() %>% arrange(Strategy,Strata)
+
+AnalysisDat2$Cases.pP <- AnalysisDat2$Cases / simPop
+AnalysisDat2$incidence <- (AnalysisDat2$Cases / simPop) * 1000
+
+AnalysisDat2$StrataLabel <- factor(AnalysisDat2$Strata,
+                             levels = c("very low", "low", "urban", "moderate", "high"),
+                             labels = c("very low", "low", "urban", "moderate", "high"))
 
 dat_20152020 <- AnalysisDat2 %>%
-  dplyr::filter(year == 2020 &
-                  statistic == 'median' &
-                  Strategy %in% selectedStrategies[1]) %>%
+  dplyr::filter( Strategy %in% selectedStrategies[1]) %>%
   dplyr::select(District, StrataLabel, Strategy, FutScen, FutScen_nr, FutScen_label,
                 futCMlabel, futITNlabel, futSNPlabel, futMDAlabel, futIRSlabel, futLARVlabel, futIPTSClabel) %>%
   as.data.table()
 
 dat_20182020 <- AnalysisDat2 %>%
-  dplyr::filter(year == 2020 &
-                  statistic == 'median' &
-                  Strategy %in% selectedStrategies[2]) %>%
+  dplyr::filter(Strategy %in% selectedStrategies[2]) %>%
   dplyr::select(District, StrataLabel, Strategy, FutScen, FutScen_nr, FutScen_label,
                 futCMlabel, futITNlabel, futSNPlabel, futMDAlabel, futIRSlabel, futLARVlabel, futIPTSClabel) %>%
   as.data.table()
@@ -109,6 +130,8 @@ map_20152020 <- intervention_map(x = districts_sp.f %>% dplyr::left_join(dat_201
 map_20182020 <- intervention_map(x = districts_sp.f %>% dplyr::left_join(dat_20182020))
 
 pplot <- plot_grid(map_20152020, map_20182020, nrow = 2, align = 'hv', labels = c('A', 'B'))
+pplot
+
 ggsave("map2_NMSP_20152020_20182020.png", plot = pplot, path = 'figures', width = 20, height = 9, device = "png")
 ggsave("map2_NMSP_20152020_20182020.pdf", plot = pplot, path = 'figures', width = 20, height = 9, device = "pdf")
 

@@ -33,7 +33,7 @@ JAGSresults <- JAGSresultsCombined %>%
 selectVars <- c("District", "outcome", "FutScen_nr", "year", "statistic", "value")
 
 JAGSresults_pred <- JAGSresults %>%
-  dplyr::select(all_of(selectVarsselectVars)) %>%
+  dplyr::select(all_of(selectVars)) %>%
   dplyr::filter(outcome != "EIR" & outcome != "ITN") %>%
   tidyr::pivot_wider(names_from = outcome, values_from = value)
 

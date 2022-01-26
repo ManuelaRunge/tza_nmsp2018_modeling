@@ -64,7 +64,7 @@ JAGSresults_wide$counterfactual[JAGSresults_wide$FutScen_nr == FutScen_nrCounter
 ## However for simplification one scenario was picked to represent the baseline in baselineYear (2016).
 ## Otherwie the mean needs to be calculated and readded to the dataset
 JAGSresults_wide$baseline <- 0
-JAGSresults_wide$baseline[JAGSresults_wide$FutScen_nr == FutScen_nrCounterfactual & JAGSresults_wide$year == baselineYear] <- 1
+JAGSresults_wide$baseline[JAGSresults_wide$counterfactual == 1 & JAGSresults_wide$year == baselineYear] <- 1
 
 ### Calculate relative reductions using data.table
 ### including year as grp ( reduction calculated each year for each council and each statistic)
