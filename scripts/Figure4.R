@@ -1,171 +1,219 @@
 cat(paste0('Start running Figure4.R'))
 
-load(file.path("simdat", "AnalysisDat.RData"))
+selectedOutcome <- "PR"  # "Cases.pP"
 
-## IPT scenarios
-IPTScinterventions <- AnalysisDat %>%
-  dplyr::filter(
-    (CMincrease == "@Access2016@" &
-      futITNcov == 0 &
-      futSNPcov == 0 &
-      futIRScov != 0 &
-      FutureScenarios == "onlyCMandITN") |
-      (CMincrease == "@Access2016@" &
-        futITNcov != 0 &
-        futSNPcov == 0 &
-        futIRScov == 0 &
-        FutureScenarios == "onlyCMandITN") |
-      (CMincrease == "@Access2016@" &
-        futITNcov == 0 &
-        futSNPcov != 0 &
-        futIRScov == 0 &
-        FutureScenarios == "onlyCMandITN") |
-      (CMincrease == "@Access2016@" &
-        futITNcov != 0 &
-        futSNPcov != 0 &
-        futIRScov == 0 &
-        FutureScenarios == "onlyCMandITN")
-  ) %>%
-  dplyr::select(FutScen) %>%
-  unique()
-(PTScinterventions <- IPTScinterventions$FutScen)
+load(file.path("simdat", "AnalysisDat.Rdata"))
+AnalysisDat <- AnalysisDat %>%
+  filter(Strata %in% c('very low', 'low', 'urban')) %>%
+  filter((year == 2022 | year == 2020 | year == 2016)) %>%
+  mutate(PR = PR * 100)
+str(AnalysisDat)
 
-#### Create IPTsc plot (in (moderate and) high stratum only)
-### Get relevant future scenarios
 FutNrDat <- AnalysisDat %>%
   filter(FutureScenarios == "onlyCMandITN" &
-           futITNcov != 0.5 &
-           futSNPcov != 0.4 &
-           (futIRScov == 0 | (futIRScov != 0 & futSNPcov != 0 & futITNcov != 0)) &
-           ((CMincrease == "no increase in CM" & (futSNPcov != 0 | futITNcov != 0)) |
-             (CMincrease != "no increase in CM" & (futSNPcov != 0 | futITNcov != 0)))
-  ) %>%
+           IPTcov == 0 &
+           futIRScov == 0) %>%
   dplyr::select(FutScen_nr, FutScen_label) %>%
   unique()
 
-AnalysisDat$Cases.pP <- AnalysisDat$Cases / simPop
-AnalysisDat$Incidence <- (AnalysisDat$Cases / simPop) * 1000
+FutNrDat <- FutNrDat %>% filter(FutScen_label %in% c('increase in CM - ITN MRC', 'increase in CM'))
+### generate variables for nets, regardless of other interventions
+tempdat <- AnalysisDat %>%
+  ungroup() %>%
+  group_by(Strata) %>%
+  filter(FutScen_nr %in% FutNrDat$FutScen_nr &
+           FutScen_label != "ITN MRC continuous")
 
-### create label
-AnalysisDat$IPTscplotlabel <- paste0(AnalysisDat$futITNdep, " & ", AnalysisDat$futIRSlabel)
-AnalysisDat$IPTscplotlabel <- gsub(" and ", "\n+",
-                                   gsub(" & ", "\n+",
-                                        gsub(" & no IRS", "",
-                                             AnalysisDat$IPTscplotlabel)))
+table(tempdat$FutScen_label, tempdat$Strata)
+tempdat$withWithoutNets <- "CM only"
+tempdat$withWithoutNets[grep("ITN", tempdat$FutScen_label)] <- "+ ITNs"
+tempdat$withWithoutNets <- factor(tempdat$withWithoutNets,
+                                  levels = c("CM only", "+ ITNs"),
+                                  labels = c("CM only", "+ ITNs"))
 
-AnalysisDat$IPTscplotlabel2 <- factor(AnalysisDat$IPTscplotlabel,
-                                      levels = c("no ITN",
-                                                 "no ITN\n+IRS",
-                                                 "continuous",
-                                                 "mass-campaign",
-                                                 "both",
-                                                 "continuous\n+IRS",
-                                                 "mass-campaign\n+IRS",
-                                                 "both\n+IRS"),
-                                      labels = c("none",
-                                                 "+IRS",
-                                                 "ITN continuous",
-                                                 "ITN mass-campaign",
-                                                 "ITN mass-campaign\n+continuous",
-                                                 "ITN continuous\n+IRS",
-                                                 "ITN mass-campaign\n+IRS",
-                                                 "ITN mass-campaign\n+continuous\n+IRS")
+table(tempdat$FutScen_label, tempdat$withWithoutNets, exclude = NULL)
+
+### aggregate LLIN group - take mean --- or generate ranges across all LLIN scenarios?
+groupVARS <- c("District", "statistic", "Strata", "Population_2016", "withWithoutNets", "year")
+tempdatForDiff <- tempdat %>%
+  dplyr::group_by_at(.vars = groupVARS) %>%
+  dplyr::summarize(PR = mean(PR), EIR = mean(EIR))
+
+## calculate difference in CM vs CM+LLIN
+groupVARS <- c("District", "statistic", "Strata", "Population_2016", "year")
+tempdatForDiff <- data.table(tempdatForDiff, key = groupVARS)
+tempdatForDiff[, CMITNdiff := PR[withWithoutNets == "CM only"] - PR[withWithoutNets == "+ ITNs"], by = groupVARS]
+tempdatForDiff[, CMITNdiff_perc := ((PR[withWithoutNets == "CM only"] - PR[withWithoutNets == "+ ITNs"]) / PR[withWithoutNets == "CM only"]) * 100, by = groupVARS]
+
+## transform back to data frame and then aggregate from council to strata
+groups <- c("statistic", "Strata", "withWithoutNets", "year")
+tempdatForDiffAggr <- tempdatForDiff %>%
+  filter(statistic == 'median') %>%
+  aggregatDat(groups, "CMITNdiff", "Population_2016", weightedAggr = weightedAggr)
+
+#tempdatForDiffAggr %>% filter(year == 2020)
+table(tempdatForDiff$District, tempdatForDiff$withWithoutNets)
+
+### add n districts
+nDisSTrata <- tempdatForDiff %>%
+  dplyr::select(District, Strata) %>%
+  unique() %>%
+  dplyr::group_by(Strata) %>%
+  tally()
+sum(nDisSTrata$n)
+
+### Creae label variable
+tempdatForDiff$StrataRev_adj <- as.character(tempdatForDiff$Strata)
+tempdatForDiff$StrataRev_adj <- factor(tempdatForDiff$StrataRev_adj,
+                                       levels = c("very low", "low", "urban"),
+                                       labels = c(
+                                         paste0("very low\n(n=", nDisSTrata$n[nDisSTrata$Strata == "very low"], ")"),
+                                         paste0("low\n(n=", nDisSTrata$n[nDisSTrata$Strata == "low"], ")"),
+                                         paste0("urban\n(n=", nDisSTrata$n[nDisSTrata$Strata == "urban"], ")")
+                                       )
 )
 
-# FutNr <- selectedFutscenNr - !(District %in% missingIPTscDistricts),
-AnalysisDat <- AnalysisDat %>%
-  filter(Strata %in% c("moderate", "high") &
-           year >= 2016 &
-           year <= 2020 &
-           FutScen_nr %in% FutNrDat$FutScen_nr &
-           statistic == "median") %>%
-  dplyr::select(District, Population_2016, Strata, IPTscplotlabel2, IPTscplotlabel,
-                year, FutScen_nr, futCMlabel, IPTcov, CMincrease, PR, Cases.pP) %>%
+#### Aggregate
+if (selectedOutcome == "PR") selectedOutcomeLabel <- expression(italic("PfPR")["2 to 10"] * " (%)")
+if (selectedOutcome == "Cases.pP") selectedOutcomeLabel <- "Cases pP"
+
+groups <- c("statistic", "Strata", "StrataRev_adj", "withWithoutNets", "year")
+plotdat <- tempdatForDiff %>%
+  filter(statistic == "median") %>%
+  aggregatDat(groupVars = groups, valueVar = selectedOutcome, weightVar = "Population_2016", weightedAggr = weightedAggr)
+
+
+plotdat$withWithoutNets_year <- paste0(plotdat$withWithoutNets, ' ', plotdat$year)
+withWithoutNets_year_cols <- c("CM only 2016" = "#7FD8F6",
+                               "CM only 2020" = "#00B2EE",
+                               "CM only 2022" = "#007CA6",
+                               "+ ITNs 2016" = "#F4AC66",
+                               "+ ITNs 2020" = "#EE7600",
+                               "+ ITNs 2022" = "#BE5E00")
+
+
+get_pplotSmall <- function(df) {
+  pplot <- ggplot(data = df) +
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    theme_cowplot() +
+    geom_bar(aes(x = withWithoutNets, y = mean.val, fill = withWithoutNets_year, group = year),
+             stat = "identity", position = position_dodge(width = 0.5), width = 0.5, size = 0.7) +
+    geom_errorbar(aes(x = withWithoutNets, ymin = lower.ci.val, ymax = upper.ci.val, group = year),
+                  stat = "identity", position = position_dodge(width = 0.5), width = 0.5, size = 0.7, col = "black") +
+    scale_fill_manual(values = withWithoutNets_year_cols) +
+    labs(y = selectedOutcomeLabel, colour = "", fill = "", x = "") +
+    labs(subtitle = "") +
+    theme(legend.position = "right") +
+    facet_wrap(~StrataRev_adj, scales = "free") +
+    customTheme_noAngle
+  return(pplot)
+}
+
+p1 <- get_pplotSmall(subset(plotdat, Strata == "very low")) + scale_y_continuous(lim = c(0, 3.5))
+p2 <- get_pplotSmall(subset(plotdat, Strata == "low")) +
+  scale_y_continuous(lim = c(0, 12), breaks = seq(0, 12, 1), labels = seq(0, 12, 1)) +
+  theme(legend.position = 'None')
+p3 <- get_pplotSmall(subset(plotdat, Strata == "urban")) +
+  scale_y_continuous(lim = c(0, 16)) +
+  theme(legend.position = 'None')
+plegend <- get_legend(p1)
+p1 <- p1 + theme(legend.position = 'None')
+pplot <- plot_grid(p1, p2, p3, nrow = 1, align = 'hv')
+pplotSmall <- plot_grid(pplot, plegend, rel_widths = c(1, 0.25))
+
+
+###-----------------------------------------
+### very low risk strata by EIR
+groupVARS <- c("District", "statistic", "Strata_withoutUrban", "Population_2016", "withWithoutNets", "year")
+tempdatForDiff <- tempdat %>%
+  filter(Strata_withoutUrban == "Very low") %>%
+  dplyr::group_by_at(.vars = groupVARS) %>%
+  dplyr::summarize(PR = mean(PR), EIR = mean(EIR))
+rm(groupVARS)
+
+tempdatForEIR <- tempdatForDiff %>%
+  ungroup() %>%
+  filter(withWithoutNets == 'CM only' & year == 2016) %>%
+  dplyr::select(District, statistic, EIR)
+
+tempdatForEIR$EIRgrp <- cut(tempdatForEIR$EIR, c(-Inf, 2, 5, 10, 20, 40, 80, Inf),
+                            labels = c("EIR <2", "EIR 2-5", "EIR 5-10", "EIR 10-20", "EIR 20-40", "EIR 40-80", "EIR >80"))
+tempdatForEIR$EIRgrp_adj <- cut(tempdatForEIR$EIR, c(-Inf, 2, 5, 10, Inf),
+                                labels = c("EIR <2", "EIR 2-5", "EIR 5-10", "EIR > 10"))
+
+
+d <- tempdatForEIR %>%
+  ungroup() %>%
+  dplyr::select(District, EIRgrp_adj) %>%
   unique() %>%
-  gather("outcome", "value", -c(District, Population_2016, Strata, IPTscplotlabel2,
-                                IPTscplotlabel, year, FutScen_nr, futCMlabel, IPTcov, CMincrease))
-### not aggregated but using geom_smooth in plot (loess regression function)
+  group_by(EIRgrp_adj) %>%
+  arrange(EIRgrp_adj) %>%
+  tally()
 
-### add n districts!!
-AnalysisDat$Strata_adj <- factor(AnalysisDat$Strata,
-                                 levels = c("moderate", "high"),
-                                 labels = c("moderate\n(n=41)", "high\n(n=69)"))
+tempdatForEIR$EIRgrp_adj <- factor(tempdatForEIR$EIRgrp_adj,
+                                   levels = c("EIR <2", "EIR 2-5", "EIR 5-10", "EIR > 10"),
+                                   labels = c(
+                                     paste0("EIR <2\n(n=", d$n[d$EIRgrp_adj == "EIR <2"], ")"),
+                                     paste0("EIR 2-5\n(n=", d$n[d$EIRgrp_adj == "EIR 2-5"], ")"),
+                                     paste0("EIR 5-10\n(n=", d$n[d$EIRgrp_adj == "EIR 5-10"], ")"),
+                                     paste0("EIR > 10\n(n=", d$n[d$EIRgrp_adj == "EIR > 10"], ")")
+                                   )
+)
+
+table(tempdatForEIR$EIRgrp_adj, tempdatForEIR$EIRgrp, exclude = NULL)
 
 
-### Calculate difference between improved CM and not improved CM across the other interventions using data.table
-## IPTsc difference, regardless of CM
-groupVars <- c("Strata", "District", "IPTscplotlabel", "year", "futCMlabel", "CMincrease", "outcome", "Strata_adj")
-AnalysisDat <- as.data.table(AnalysisDat, key = groupVars)
-AnalysisDat[, IPTscdiff := value[IPTcov == 0] - value[IPTcov == 0.8], by = groupVars]
-AnalysisDat[, IPTscdiff_perc := ((value[IPTcov == 0] - value[IPTcov == 0.8]) / value[IPTcov == 0]) * 100, by = groupVars]
+tempdatForDiff <- tempdatForDiff %>%
+  dplyr::select(-EIR) %>%
+  left_join(tempdatForEIR)
 
-### Calculate difference between IPTsc and no IPTsc across the other interventions using data.table
-## CM difference, regardless of IPTsc
-groupVars <- c("Strata", "District", "IPTscplotlabel", "year", "IPTcov", "outcome", "Strata_adj")
-AnalysisDat <- as.data.table(AnalysisDat, key = groupVars)
-AnalysisDat[, CMdiff := value[futCMlabel == "current case management"] - value[futCMlabel != "current case management"], by = groupVars]
-AnalysisDat[, CMdiff_perc := ((value[futCMlabel == "current case management"] - value[futCMlabel != "current case management"]) / value[futCMlabel == "current case management"]) * 100, by = groupVars]
+#### Prepare main plot - show very low only
+table(tempdatForDiff$withWithoutNets, tempdatForDiff$Strata_withoutUrban)
+groups <- c("Strata_withoutUrban", "EIRgrp_adj", "withWithoutNets", "year")
 
-AnalysisDat <- AnalysisDat %>% filter(year == 2020)
+### spread statistic
+tempdat_stat <- tempdatForDiff %>%
+  ungroup() %>%
+  dplyr::select(EIR, year, Strata_withoutUrban, District, withWithoutNets, statistic, PR) %>%
+  pivot_wider(names_from = statistic, values_from = c("PR", "EIR"))
 
-### Wide to long format for plotting
-AnalysisDat_long <- AnalysisDat %>%
-  dplyr::select(District, Population_2016, year, IPTscplotlabel2, outcome, CMdiff_perc, IPTscdiff_perc) %>%
-  pivot_longer(cols = -c(District, Population_2016, year, IPTscplotlabel2, outcome), names_to = 'variable')
 
-AnalysisDat_long$variable[AnalysisDat_long$variable == "CMdiff_perc"] <- "improved CM"
-AnalysisDat_long$variable[AnalysisDat_long$variable == "IPTscdiff_perc"] <- "IPTsc"
-table(AnalysisDat_long$variable)
-
-### Create plot
-pplot <- ggplot(data = AnalysisDat_long) +
-  geom_hline(yintercept = c(20, 40, 60, 80), color = "grey") +
-  geom_hline(yintercept = c(0)) +
-  geom_boxplot(aes(x = IPTscplotlabel2, y = value, fill = variable), width = 0.7) +
+pplotMain <- ggplot(
+  data = subset(tempdat_stat, Strata_withoutUrban == "Very low"),
+  aes(x = EIR_median, y = PR_median,
+      ymin = PR_q2.5, ymax = PR_q97.5,
+      xmin = EIR_q2.5, xmax = EIR_q97.5,
+      col = as.factor(withWithoutNets),
+      fill = as.factor(withWithoutNets))) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  theme_cowplot() +
+  geom_errorbar(size = 0.7, alpha = 0.5) +
+  geom_errorbarh(size = 0.7, alpha = 0.5) +
+  geom_point(shape = 21, size = 2, col = "black", alpha = 0.7) +
+  geom_smooth(show.legend = FALSE, se = FALSE, span = 1) +
+  facet_wrap(~year, nrow = 1, scales = "free_y") +
+  scale_x_continuous(trans = "log", breaks = c(1:5, 10, 20), labels = c(1:5, 10, 20)) +
+  scale_y_continuous(breaks = seq(0, 20, 2), labels = seq(0, 20, 2)) +
+  scale_color_manual(values = TwoCols) +
   scale_fill_manual(values = TwoCols) +
-  facet_wrap(~outcome, nrow = 2) +
-  theme(strip.text.x = element_text(size = 16),
-        strip.text.y = element_text(size = 16),
-        strip.background = element_blank(),
-        plot.title = element_text(hjust = 0.5, vjust = 1)) +
-  scale_y_continuous(lim = c(-20, 81), breaks = seq(0, 90, 20)) +
+  labs(y = selectedOutcomeLabel, colour = "", fill = "", x = "",
+       subtitle = "", x = "pre-intervention EIR (log-scale)") +
   theme(legend.position = "right") +
-  labs(y = "reduction (%)", fill = "", x = "", title = "")
+  customTheme_noAngle
 
-pplot
-ggsave("Fig_4.png", plot = pplot, path = file.path("figures"), width = 15, height = 8, device = "png")  ## previously saved Figure6_new
-#ggsave("Fig_4.pdf", plot = pplot, path = file.path("figures"), width = 15, height = 8, device = "pdf")  ## previously saved Figure6_new
+#pplotSmall <- pplotSmall + theme(legend.position = 'None')
+#pplotMain <- pplotMain + theme(legend.position = 'None')
+(Figure4 <- plot_grid(pplotSmall, pplotMain, nrow = 2, align = 'hv', labels = c('A)', 'B)')))
 
-## For text
-AnalysisDat_long %>%
-  aggregatDat(groupVars = c("variable", "outcome"), valueVar = "value", weightVar = "Population_2016", weightedAggr = T) %>%
-  fwrite(file.path("figures", 'figuredat', paste0("Fig4_AnalysisDat_long_weighted.csv")))
-
-AnalysisDat_long %>%
-  aggregatDat(groupVars = c("variable", "outcome"), valueVar = "value", weightVar = "Population_2016", weightedAggr = F) %>%
-  fwrite(file.path("figures", 'figuredat', paste0("Fig4_AnalysisDat_long_unweighted.csv")))
-
-
-groupVars <- c("Strata", "IPTscplotlabel", "year", "FutScen_nr", "futCMlabel", "IPTcov", "CMincrease", "outcome")
-subdatAggrStrat <- AnalysisDat %>%
-  filter(!(outcome %in% c("Cases.Pop", "Cases.pP"))) %>%
-  aggregatDat(groupVars, "value", "Population_2016", weightedAggr = weightedAggr)
-
-groupVars <- c("IPTscplotlabel", "year", "FutScen_nr", "futCMlabel", "IPTcov", "CMincrease", "outcome")
-subdatAggr <- AnalysisDat %>%
-  filter(!(outcome %in% c("Cases.Pop", "Cases.pP"))) %>%
-  aggregatDat(groupVars ,  "value",  "Population_2016", weightedAggr = weightedAggr)
-
-
-groupVars <- c("IPTscplotlabel", "year", "futCMlabel", "CMincrease", "outcome")
-subdatAggrIPTsc <- AnalysisDat %>%
-  filter(!(outcome %in% c("Cases.Pop", "Cases.pP"))) %>%
-  aggregatDat(groupVars ,  "IPTscdiff",  "Population_2016", weightedAggr = weightedAggr)
+ggsave(paste0("Fig_4.png"), plot = Figure4, path = file.path("figures"), width = 13, height = 8, dpi = 200, device = "png")
+if (SAVEpdf)ggsave(paste0("Fig_4.pdf"), plot = Figure4, path = file.path("figures"), width = 13, height = 8, dpi = 200, device = "pdf")
 
 
 ### Save datasetss
-fwrite(AnalysisDat_long, file = file.path("figures", 'figuredat', paste0("Fig4.csv")))
-fwrite(subdatAggrStrat, file = file.path("figures", 'figuredat', paste0("Fig4_pplotMain_aggrStrat.csv")))
-fwrite(subdatAggr, file = file.path("figures", 'figuredat', paste0("Fig4_pplotMain_aggr.csv")))
-fwrite(subdatAggrIPTsc, file = file.path("figures", 'figuredat', paste0("Fig4_pplotMain_IPTdiff.csv")))
+fwrite(plotdat, file = file.path("figures", 'figuredat', paste0("Fig4_pplotSmall_", selectedOutcome, ".csv")))
+fwrite(tempdat, file = file.path("figures", 'figuredat', paste0("Fig4_tempdat_", selectedOutcome, ".csv")))
+fwrite(tempdat_stat, file = file.path("figures", 'figuredat', paste0("Fig4_tempdat_stat", selectedOutcome, ".csv")))
+
+rm(pplotSmall, pplotMain, Figure4, plotdat, tempdat, tempdat_stat)
+
 

@@ -1,189 +1,152 @@
 cat(paste0('Start running Figure2.R'))
 
+shp_proj <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+
+### Shapefiles obtained from NMCP Tanzania
+use_old_boundaries = F
+if (!use_old_boundaries) {
+  districts_sp <- shapefile(file.path("shapefiles", "TZA_Districts.shp"), verbose = FALSE)
+  regions_sp <- shapefile(file.path("shapefiles", "TZA_Regions.shp"), verbose = FALSE)
+  district_sp_name_old <- 'District_1'
+}else {
+  ### For public repository use public available shapefiles
+  regions_sp <- getData("GADM", country = "TZA", level = 1)
+  districts_sp <- getData("GADM", country = "TZA", level = 2)
+  district_sp_name_old <- 'NAME_2'
+}
+
+projection(districts_sp) <- shp_proj
+projection(regions_sp) <- shp_proj
+
+names(districts_sp)[which(names(districts_sp) == district_sp_name_old)] <- "District"
+### as.MAPshp more convenient to use than fortify
+districts_sp.f <- as.MAPshp(districts_sp)
+regions_sp.f <- as.MAPshp(regions_sp)
+
+tempdat <- fread(file.path("dat", "TZADistrictDat.csv"))
+tempdat <- unique(tempdat[, c("District", "Strata")])
+dim(tempdat)
+
+if (use_old_boundaries) {
+  dis2 <- sort(unique(tempdat$District)[!(unique(tempdat$District) %in% unique(districts_sp.f$District))])
+  source(file.path('rlibrary', 'f_adjust_tza_old_new_boundaries.R'))
+  tempdat$District[tempdat$District %in% dis2] <- str_replace_all(tempdat$District[tempdat$District %in% dis2],
+                                                                  dis_new_to_old)
+}
+
+tempDat.df <- dplyr::left_join(districts_sp.f, tempdat)
+
+pplot <- ggplot(, warnings = FALSE) +
+  geom_polygon(
+    data = tempDat.df,
+    aes(x = long, y = lat, group = group, fill = Strata), color = "black", size = 0.35
+  ) +
+  geom_polygon(data = regions_sp.f, aes(x = long, y = lat, group = group), color = "black", fill = NA, size = 0.75) +
+  theme_nothing() +
+  scale_fill_manual(values = StrataCols, drop = FALSE) +
+  theme(legend.position = 'right')
+
+ggsave("Fig_2map.png", plot = pplot, path = 'figures', width = 12, height = 10, device = "png")
+if (SAVEpdf)ggsave("Fig_2map.pdf", plot = pplot, path = 'figures', width = 12, height = 10, device = "pdf")
+
+
+##---------------------------------------------
+### Separate by intervention
+##---------------------------------------------
 load(file.path("simdat", "AnalysisDat.RData"))
-AnalysisDat <- AnalysisDat %>% 
-  filter(statistic == 'median') %>%
-  mutate(PR=PR*100)
-
-NMSPdat_long <- f_load_nmsp_scendat()
-
-baselineDat <- AnalysisDat %>%
-  dplyr::filter(baseline==1) %>%
-  aggregatDat(groupVars = "Strata", valueVar = "PR",
-              weightVar = "Population_2016", WideToLong = FALSE, weightedAggr = weightedAggr)
-
-str(baselineDat)
-baselineDat$StrataLabel2 <- factor(baselineDat$Strata,
-                                   levels = c("very low", "low", "urban", "moderate", "high"),
-                                   labels = c("very low (6)", "low (5)", "urban (9)", "moderate (6)", "high (11)")
-)
-
-baselineDat$StrataLabel <- factor(baselineDat$Strata, levels = strata_lbl, labels = strata_lbl)
-
-
-
-
-### Results in multiple strategy rows per district and scenario
-AnalysisDat <- AnalysisDat %>% filter(year==2020)
-AnalysisDat$FutScen_label_noCM[AnalysisDat$FutScen_label_noCM=='no CM only'] <- 'counterfactual'
+AnalysisDat <- AnalysisDat %>%
+  mutate(PR = PR * 100) %>%
+  filter(year == 2020 & statistic == 'median')
 
 AnalysisDat2 <- full_join(AnalysisDat, NMSPdat_long[, c('District', 'FutScen', 'Strategy', 'Strategy_FutScen_nr')]) %>%
   filter(!(is.na(Strategy)))
-
-any(duplicated(AnalysisDat2[,c('District','FutScen_nr','year','statistic','PR','FutScen','FutScen_label','Strategy')]))
 dim(AnalysisDat2)
+rm(AnalysisDat)
+
 table(AnalysisDat2$Strategy, AnalysisDat2$CMincrease, exclude = NULL)
 length(unique(NMSPdat_long$Strategy))
 length(unique(AnalysisDat2$Strategy))
 
-
-tempdat <- AnalysisDat2 %>%
-  dplyr::select(FutScen, futSNPcov, FutScen_nr) %>%
-  unique()
-
-source(file.path('rlibrary', 'get_explorative_strategies.R'))
-
-ScenDat <- left_join(ScenDat, tempdat) %>% as.data.frame()
-ScenDat$StrataLabel <- factor(ScenDat$Strata, levels = strata_lbl, labels = strata_lbl)
-
-table(ScenDat$FutScen_label_noCM, exclude = NULL)
-ScenDat$FutScen_label_noCM_old <- ScenDat$FutScen_label_noCM
-#ScenDat$FutScen_label_noCM <- ScenDat$FutScen_label_noCM_old
-
-ScenDat %>% dplyr::select(Strata,FutScen_label_noCM, CMincrease) %>% 
+AnalysisDat2 %>%
+  filter(Strategy %in% selectedStrategies) %>%
+  dplyr::select(Strata, Strategy, FutScen_nr, FutScen) %>%
   unique() %>%
-  group_by(Strata,CMincrease) %>% 
-  tally() %>%
-  pivot_wider(names_from=CMincrease, values_from=n)
+  arrange(Strategy, Strata)
 
+AnalysisDat2$Cases.pP <- AnalysisDat2$Cases / simPop
+AnalysisDat2$incidence <- (AnalysisDat2$Cases / simPop) * 1000
+AnalysisDat2$StrataLabel <- factor(AnalysisDat2$Strata, levels = Strata_labels, labels = Strata_labels)
 
-## selected intervention mixes per strata
-verylowFinal <- 77 # revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM
-lowFinal <- 125 # revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM
-urbanFinal <- c(73, 85, 133, 134) # revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM
-moderateFinal <- 137 #revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM
-highFinal <- c(102, 108) #revNMSP8a_new_IPTscHighOnly_SMCmoderat_noLSM
+dat_20152020 <- AnalysisDat2 %>%
+  dplyr::filter(Strategy %in% selectedStrategies[1]) %>%
+  dplyr::select(District, StrataLabel, Strategy, FutScen, FutScen_nr, FutScen_label,
+                futCMlabel, futITNlabel, futSNPlabel, futMDAlabel, futIRSlabel, futLARVlabel, futIPTSClabel) %>%
+  as.data.table()
 
-custom_plot <- function(base_df, scen_df,selected_FutScen_nr, col_index,facet_colors=TRUE){
-  pplot <- ggplot(data = base_df) +
-    theme_cowplot() +
-    geom_hline(yintercept = 0, color = "white", linetype = "dashed", size = 0.7) +
-    geom_hline(yintercept = 1, color = "black", linetype = "solid", size = 0.7) +
-    geom_rect(aes(ymin = lower.ci.val, ymax = upper.ci.val, xmin = -Inf, xmax = Inf), alpha = 0.45, fill = 'lightgrey') +
-    geom_hline(aes(yintercept = mean.val), linetype = "dashed", size = 0.7) +
-    geom_pointrange(data = scen_df, aes(x = as.factor(FutScen_label_noCM),
-                                        y = mean.val,
-                                        ymin = lower.ci.val,
-                                        ymax = upper.ci.val, col = CMincrease)) +
-    geom_pointrange(data = subset(scen_df, FutScen_nr %in% selected_FutScen_nr),
-                    aes(x = FutScen_label_noCM,
-                        y = mean.val,
-                        ymin = lower.ci.val,
-                        ymax = upper.ci.val),
-                    col = prevcolsAdj[col_index]) +
-    facet_wrap(~Strata, scales = "free", ncol = 2) +
-    scale_color_manual(values=c('grey','black'))+
-    coord_flip() +
-    geom_hline(yintercept = c(Inf)) +
-    theme(legend.position = "none") +
-    geom_vline(xintercept = c(Inf, -Inf)) +
-    labs(x='',y = expression(italic("PfPR")["2 to 10"] * "")) +
-    theme(
-      panel.spacing.x = unit(0, "line"),
-      strip.text.x = element_text(size = 22, face = "bold"),
-      strip.text.y = element_text(size = 22, face = "bold"),
-      strip.placement = "outside",
-      strip.background = element_rect(colour = "black", fill = "white"),
-      plot.subtitle = element_text(hjust = -0.25, face = "bold", size = 18),
-      axis.text.x = element_text(size = 16),
-      axis.text.y = element_text(size = 16),
-      axis.title.x = element_text(size = 22),
-      axis.title.y = element_text(size = 22)
-    )
-  
+dat_20182020 <- AnalysisDat2 %>%
+  dplyr::filter(Strategy %in% selectedStrategies[2]) %>%
+  dplyr::select(District, StrataLabel, Strategy, FutScen, FutScen_nr, FutScen_label,
+                futCMlabel, futITNlabel, futSNPlabel, futMDAlabel, futIRSlabel, futLARVlabel, futIPTSClabel) %>%
+  as.data.table()
+
+dim(dat_20152020)
+dim(dat_20182020)
+
+dat_20152020 <- dat_20152020 %>%
+  dplyr::select(-c(FutScen, FutScen_label, Strategy, FutScen_nr, futMDAlabel, futLARVlabel)) %>%
+  pivot_longer(cols = -c(District, StrataLabel))
+
+dat_20182020 <- dat_20182020 %>%
+  dplyr::select(-c(FutScen, FutScen_label, Strategy, FutScen_nr, futMDAlabel, futLARVlabel)) %>%
+  pivot_longer(cols = -c(District, StrataLabel))
+
+futINTlabels <- c("futCMlabel", "futITNlabel", "futSNPlabel", "futIRSlabel", "futIPTSClabel")  #"futLARVlabel"
+futINTlabels_new <- gsub('label', '', gsub('fut', '', futINTlabels))
+futINTlabels_new <- gsub('SNP', 'ITN-SNP', gsub('ITN', 'ITN-MRC', futINTlabels_new))
+futINTlabels_new <- gsub('IPTSC', 'IPTsc', futINTlabels_new)
+
+dat_20152020$name <- factor(dat_20152020$name, levels = futINTlabels, labels = futINTlabels_new)
+dat_20182020$name <- factor(dat_20182020$name, levels = futINTlabels, labels = futINTlabels_new)
+
+dat_20152020$value_yn <- 'yes'
+dat_20152020$value_yn[grep('no', dat_20152020$value)] <- 'no'
+
+dat_20182020$value_yn <- 'yes'
+dat_20182020$value_yn[grep('no', dat_20182020$value)] <- 'no'
+
+table(dat_20182020$name, dat_20182020$value_yn)
+
+fill_yn <- c('no' = 'lightgrey', 'yes' = 'darkorange')
+
+intervention_map <- function(x) {
+  ggList <- lapply(split(x, x$name), function(i) {
+    ggplot(i, warnings = FALSE) +
+      geom_polygon(aes(x = long, y = lat, group = group, fill = value_yn),
+                   color = "grey", size = 0.25) +
+      geom_polygon(data = admin1_sp.f, aes(x = long, y = lat, group = group),
+                   color = "black", fill = NA, size = 0.35) +
+      theme_map() +
+      facet_wrap(~name, nrow = 1) +
+      theme(legend.position = 'none') })
+
+  pplot <- cowplot::plot_grid(plotlist = ggList, nrow = 1, align = 'hv', labels = '') #levels(x$name)
   return(pplot)
 }
 
+admin1_sp.f <- regions_sp.f
+map_20152020 <- intervention_map(x = districts_sp.f %>% dplyr::left_join(dat_20152020))
+map_20182020 <- intervention_map(x = districts_sp.f %>% dplyr::left_join(dat_20182020))
+plegend <- get_legend(ggplot(data = districts_sp.f %>% dplyr::left_join(dat_20152020), warnings = FALSE) +
+                        geom_polygon(aes(x = long, y = lat, group = group, fill = value_yn),
+                                     color = "grey", size = 0.25) +
+                        scale_fill_manual(values = fill_yn, na.value = NA, drop = FALSE) +
+                        labs(fill = '') +
+                        customTheme_noAngle)
 
-facet_color <- function(p,col_index){
-  g <- ggplot_gtable(ggplot_build(p))
-  strip_both <- which(grepl("strip-", g$layout$name))
-  fills <- prevcolsAdj[col_index]
-  k <- 1
-  for (i in strip_both) {
-    j <- which(grepl("rect", g$grobs[[i]]$grobs[[1]]$childrenOrder))
-    g$grobs[[i]]$grobs[[1]]$children[[j]]$gp$fill <- fills[k]
-    k <- k + 1
-  }
-  #grid.draw(g)
- return(g)
-  
-}
+pplot <- plot_grid(map_20152020, map_20182020, nrow = 2, align = 'hv', labels = c('A', 'B'))
+pplot <- plot_grid(pplot, plegend, nrow = 1, rel_widths = c(1, 0.2))
 
-pp1 <- custom_plot(base_df=subset(baselineDat,Strata=='very low'),
-                   scen_df=subset(ScenDat,Strata=='very low'),
-                   selected_FutScen_nr=verylowFinal, 
-                   col_index=2) +labs(y='')
+ggsave("Fig2_map_NMSP_20152020_20182020.png", plot = pplot, path = 'figures', width = 20, height = 9, device = "png")
+if (SAVEpdf)ggsave("Fig2_map_NMSP_20152020_20182020.pdf", plot = pplot, path = 'figures', width = 20, height = 9, device = "pdf")
 
-
-pp2 <- custom_plot(base_df=subset(baselineDat,Strata=='low'),
-                   scen_df=subset(ScenDat,Strata=='low'),
-                   selected_FutScen_nr=lowFinal, 
-                   col_index=3) + scale_y_continuous(breaks=seq(0,7,1),
-                                                    labels=seq(0,7,1))+
-  labs(y='',x = "Intervention packages per strata (unique number)")
-
-pp3 <- custom_plot(base_df=subset(baselineDat,Strata=='urban'),
-            scen_df=subset(ScenDat,Strata=='urban'),
-            selected_FutScen_nr=urbanFinal, 
-            col_index=1) + scale_y_continuous(breaks=seq(0,13,2),
-                                             labels=seq(0,13,2)) 
-  
-pp4 <- custom_plot(base_df=subset(baselineDat,Strata=='moderate'),
-                   scen_df=subset(ScenDat,Strata=='moderate'),
-                   selected_FutScen_nr=moderateFinal, 
-                   col_index=4) +labs(y='')+ scale_y_continuous(breaks=seq(0,17,2),
-                                                    labels=seq(0,17,2))
-
-pp5 <- custom_plot(base_df=subset(baselineDat,Strata=='high'),
-                   scen_df=subset(ScenDat,Strata=='high'),
-                   selected_FutScen_nr=highFinal, 
-                   col_index=5) + scale_y_continuous(breaks=seq(0,27,5),
-                                                    labels=seq(0,27,5))
-## add colors
-pp1 <- facet_color(pp1,2)
-pp2 <- facet_color(pp2,3)
-pp3 <- facet_color(pp3,1)
-pp4 <- facet_color(pp4,4)
-pp5 <- facet_color(pp5,5)
-
-pplot <- plot_grid(pp1,pp4,pp2,pp5, pp3, ncol=2, align='hv')
-pplot
-
-ggsave("Fig_2.png", plot = pplot, path = 'figures', width = 14, height = 10, device = "png")
-ggsave("Fig_2.pdf", plot = pplot, path = 'figures', width = 14, height = 10, device = "pdf")
-
-
-### For text
-fwrite(ScenDat, file.path('figures', 'figuredat', 'figure2_dat.csv'))
-fwrite(baselineDat, file.path('figures', 'figuredat', 'baselineDat.csv'))
-
-
-FutScenLow = c('0.6057272-0-0-0-addMDA-0', '@Access2016@-0-0-0-addMDA-0', '0.6057272-80-0-0-onlyCMandITN-0',
-               '0.6057272-0-0-0-addLARV-0', '@Access2016@-80-0-0-onlyCMandITN-0',
-               '@Access2016@-0-0-0-addLARV-0', '0.6057272-0-0-0-onlyCMandITN-0', '@Access2016@-0-0-0-onlyCMandITN-0'
-)
-
-AnalysisDat %>%
-  dplyr::filter(year == 2020) %>%
-  filter(Strata == 'very low') %>%
-  filter(FutScen %in% FutScenLow) %>%
-  aggregatDat(groupVars = "Strata", valueVar = "PR", weightVar = "Population_2016", WideToLong = FALSE,weightedAggr=weightedAggr)
-
-
-AnalysisDat %>%
-  dplyr::filter(year == 2020) %>%
-  filter(Strata == 'very low') %>%
-  filter(FutScen %in% FutScenLow) %>%
-  aggregatDat(groupVars = c("Strata", "FutScen"), valueVar = "PR", weightVar = "Population_2016", WideToLong = FALSE,weightedAggr=weightedAggr)
-
+rm(tempdat, dat_20152020, dat_20182020, map_20152020, map_20182020, regions_sp.f, admin1_sp.f, pplot, AnalysisDat2)

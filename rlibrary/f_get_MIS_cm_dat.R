@@ -4,13 +4,11 @@
 ## PLoS ONE 15, e0228469. https://doi.org/10.1371/journal.pone.0228469
 
 f_get_MIS_cm_dat <- function() {
-  ## CM_data_allDis_v1
+  ## MISreg_CMeffectiveCoverage_2016
   ## MIS 2015/2016 -> % of febrile children sought advice or treatment at any facility in last 2 weeks,
   ## extracted per region from household clusters
   ## * 0.6 from Galactionova et al. 2015 to convert treatment seeking to effective treatment coverage
-  ## polynomial regression 2000-2016 to get annual historical trend
-  CMdat <- fread(file.path('dat', "CM_data_allDis_v1.csv"))
-
+  CMdat <- fread(file.path('dat', "TZADistrictDat.csv"))
   CMdat <- CMdat %>%
     dplyr::mutate(District = as.character(District)) %>%
     dplyr::group_by(Region) %>%
@@ -19,6 +17,3 @@ f_get_MIS_cm_dat <- function() {
 
   return(CMdat)
 }
-
-
-

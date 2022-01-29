@@ -53,9 +53,6 @@ JAGSresults_wide$Cases <- JAGSresults_wide$Severe + JAGSresults_wide$Uncomp
 
 ## Add population
 TZADistrictDat <- fread(file.path('dat', 'TZADistrictDat.csv')) %>%
-  dplyr::select(-Strata) %>%
-  rename(Strata = Stratification.5b,
-         Strata_withoutUrban = Stratification.5b_withoutUrban) %>%
   dplyr::select(District, Region, Zone, MIS_UMRC, Strata, Strata_withoutUrban, Population_2016)
 
 JAGSresults_wide <- JAGSresults_wide %>% left_join(TZADistrictDat)

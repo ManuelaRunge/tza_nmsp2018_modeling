@@ -1,13 +1,13 @@
 ### combined plot with history - additional files
 ### load historical prevalence data
 ## KEMRI pfpr
-load(file.path('dat', 'pfpr_kemri', 'TZA_KEMRI_pfpr_161018.RData'))
+load(file.path('dat', 'pfpr_mbg_2018', 'TZA_KEMRI_pfpr_161018.RData'))
 head(KEMRIpfpr_long)
 KEMRIpfpr_long <- subset(KEMRIpfpr_long, year >= 2003)
 
 ### load aggregated stats per strata
 numVars <- c("mean", "sd", "quant_0", "quant_25", "quant_50", "quant_75", "quant_100")
-KEMRI_PfPRAggrStrata <- read.csv(file.path('dat', 'pfpr_kemri', 'PfPR_aggregatedStats_perStrata.csv')) %>%
+KEMRI_PfPRAggrStrata <- read.csv(file.path('dat', 'pfpr_mbg_2018', 'PfPR_aggregatedStats_perStrata.csv')) %>%
   rename_with(~gsub("[.]", "", .x)) %>%
   mutate_at(.vars = numVars, .funs = function(x) x * 100)
 

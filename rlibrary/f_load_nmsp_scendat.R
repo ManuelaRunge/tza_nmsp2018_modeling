@@ -10,8 +10,7 @@ f_load_nmsp_scendat <- function() {
 
   #load(file.path('dat', 'NMSP_SMMSP.RData')) #TODO
   NMSPdat_long <- fread(file.path('dat', 'NMSPdat_long.csv')) %>%
-    dplyr::select(-Strata, -Stratification.5b_withoutUrban, -urbanrural, -FutScen_label) %>%
-    rename(Strata = Stratification.5b) %>%
+    dplyr::select(-Strata_withoutUrban, -FutScen_label) %>%
     dplyr::mutate(Strategy_FutScen_nr = ifelse(Strategy_FutScen_nr == 79 & Strategy %in% strategy_labels_to_update, 83,
                                                Strategy_FutScen_nr))
 

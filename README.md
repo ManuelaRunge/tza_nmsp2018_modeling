@@ -1,36 +1,18 @@
 
 # Sub-national tailoring of malaria interventions in Mainland Tanzania: simulation of the impact of strata-specific intervention combinations using modelling
 This repository includes the postprocessing and plotting scripts for the analysis of intervention simulations run for Tanzania in 2018.
-The work has been published in Mal. J. 
+Simulation data will be made available on Zenodo (DOI: 10.5281/zenodo.5701550).
 
-See related work:Runge et al, Thawer et al, 
+The work has been submitted for publication. 
 
-## Files
-Files are stored on Zenodo.
-
-- NMSPdat: includes Districts and intervention scenario number per NMSP strategy and strategy candidate
-
-
-## Simulations
-- 03032019_OMStrategicPlanning_resimAll_v2_combined
-
-## Input:
-- NMSP index per Council csv dataset (NMSPdat_long.csv)
-- Scenario index and label csv dataset (NMSPdat_long.csv)
-- Simulation outputs after fitting (JAGSresults_wide.RData)
+Related work previously published: 
+- 'Simulating the council-specific impact of anti-malaria interventions: A tool to support malaria strategic planning in Tanzania' ([Runge et al 2020](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0228469)) 
+- 'Applied mathematical modelling to inform national malaria policies, strategies and operations in Tanzania' ([Runge et al 2020](https://malariajournal.biomedcentral.com/articles/10.1186/s12936-020-03173-0))
+- 'Sub-national stratification of malaria risk in mainland Tanzania: a simplified assembly of survey and routine data' 
+  ([Thawer et al 2020](https://malariajournal.biomedcentral.com/articles/10.1186/s12936-020-03250-4))
+  
 
 
-## Requirements
-library(tidyverse)
-library(data.table)
-library(DescTools)
-library(matrixStats)
-
-## Scripts
-master.R
 
 
-00_JAGSresults_wide.R
-
-01_prepare_analysis_dat.R
 
