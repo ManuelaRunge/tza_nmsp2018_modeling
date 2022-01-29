@@ -1,0 +1,185 @@
+Region,District,Council
+Arusha,Arusha,Arusha DC
+Arusha,Arusha Urban,Arusha CC
+Arusha,Karatu,Karatu DC
+Arusha,Longido,Longido DC
+Arusha,Meru,Meru DC
+Arusha,Monduli,Monduli DC
+Arusha,Ngorongoro,Ngorongoro DC
+Daressalaam,Ilala,Ilala MC
+Daressalaam,Kigamboni,Kigamboni MC
+Daressalaam,Kinondoni,Kinondoni MC
+Daressalaam,Temeke,Temeke MC
+Daressalaam,Ubungo MC,Ubungo MC
+Dodoma,Bahi,Bahi DC
+Dodoma,Chamwino,Chamwino DC
+Dodoma,Chemba,Chemba DC
+Dodoma,Dodoma Urban,Dodoma MC
+Dodoma,Kondoa,Kondoa DC
+Dodoma,Kondoa TC,Kondoa TC
+Dodoma,Kongwa,Kongwa DC
+Dodoma,Mpwapwa,Mpwapwa DC
+Geita,Bukombe,Bukombe DC
+Geita,Chato,Chato DC
+Geita,Geita,Geita DC
+Geita,Geita Town,Geita TC
+Geita,Mbogwe,Mbogwe DC
+Geita,Nyang'wale,Nyang'hwale DC
+Iringa,Iringa,Iringa DC
+Iringa,Iringa Urban,Iringa MC
+Iringa,Kilolo,Kilolo DC
+Iringa,Mafinga Township Authority,Mafinga TC
+Iringa,Mufindi,Mufindi DC
+Kagera,Biharamulo,Biharamulo DC
+Kagera,Bukoba,Bukoba DC
+Kagera,Bukoba Urban,Bukoba MC
+Kagera,Karagwe,Karagwe DC
+Kagera,Kyerwa,Kyerwa DC
+Kagera,Missenyi,Missenyi DC
+Kagera,Muleba,Muleba DC
+Kagera,Ngara,Ngara DC
+Katavi,Mlele,Mlele DC
+Katavi,Mpanda,Mpanda DC
+Katavi,Mpanda Urban,Mpanda MC
+Katavi,Mpimbwe,Mpimbwe DC
+Katavi,Nsimbo,Nsimbo DC
+Kigoma,Buhigwe,Buhigwe DC
+Kigoma,Kakonko,Kakonko DC
+Kigoma,Kasulu,Kasulu DC
+Kigoma,Kasulu Township Authority,Kasulu TC
+Kigoma,Kibondo,Kibondo DC
+Kigoma,Kigoma,Kigoma DC
+Kigoma,Kigoma Urban,Kigoma MC
+Kigoma,Uvinza,Uvinza DC
+Kilimanjaro,Hai,Hai DC
+Kilimanjaro,Moshi,Moshi DC
+Kilimanjaro,Moshi Urban,Moshi MC
+Kilimanjaro,Mwanga,Mwanga DC
+Kilimanjaro,Rombo,Rombo DC
+Kilimanjaro,Same,Same DC
+Kilimanjaro,Siha,Siha DC
+Lindi,Kilwa,Kilwa DC
+Lindi,Lindi,Lindi DC
+Lindi,Lindi Urban,Lindi MC
+Lindi,Liwale,Liwale DC
+Lindi,Nachingwea,Nachingwea DC
+Lindi,Ruangwa,Ruangwa DC
+Manyara,Babati,Babati DC
+Manyara,Babati Urban,Babati TC
+Manyara,Hanang,Hanang DC
+Manyara,Kiteto,Kiteto DC
+Manyara,Mbulu,Mbulu DC
+Manyara,Mbulu TC,Mbulu TC
+Manyara,Simanjiro,Simanjiro DC
+Mara,Bunda DC,Bunda DC
+Mara,Bunda TC,Bunda TC
+Mara,Butiama,Butiama DC
+Mara,Musoma,Musoma DC
+Mara,Musoma Urban,Musoma MC
+Mara,Rorya,Rorya DC
+Mara,Serengeti,Serengeti DC
+Mara,Tarime,Tarime DC
+Mara,Tarime TC,Tarime TC
+Mbeya,Busokelo,Busokelo DC
+Mbeya,Chunya,Chunya DC
+Mbeya,Kyela,Kyela DC
+Mbeya,Mbarali,Mbarali DC
+Mbeya,Mbeya,Mbeya DC
+Mbeya,Mbeya Urban,Mbeya CC
+Mbeya,Rungwe,Rungwe DC
+Morogoro,Gairo,Gairo DC
+Morogoro,Ifakara,Ifakara TC
+Morogoro,Kilombero,Kilombero DC
+Morogoro,Kilosa,Kilosa DC
+Morogoro,Malinyi,Malinyi DC
+Morogoro,Morogoro,Morogoro DC
+Morogoro,Morogoro Urban,Morogoro MC
+Morogoro,Mvomero,Mvomero DC
+Morogoro,Ulanga,Ulanga DC
+Mtwara,Masasi,Masasi DC
+Mtwara,Masasi Township Authority,Masasi TC
+Mtwara,Mtwara DC,Mtwara DC
+Mtwara,Mtwara Urban,Mtwara MC
+Mtwara,Nanyamba TC,Nanyamba TC
+Mtwara,Nanyumbu,Nanyumbu DC
+Mtwara,Newala DC,Newala DC
+Mtwara,Newala TC,Newala TC
+Mtwara,Tandahimba,Tandahimba DC
+Mwanza,Buchosa DC,Buchosa DC
+Mwanza,Ilemela,Ilemela MC
+Mwanza,Kwimba,Kwimba DC
+Mwanza,Magu,Magu DC
+Mwanza,Misungwi,Misungwi DC
+Mwanza,Nyamagana,Nyamagana MC
+Mwanza,Sengerema DC,Sengerema DC
+Mwanza,Ukerewe,Ukerewe DC
+Njombe,Ludewa,Ludewa DC
+Njombe,Makambako Township Authority,Makambako TC
+Njombe,Makete,Makete DC
+Njombe,Njombe,Njombe DC
+Njombe,Njombe Urban,Njombe TC
+Njombe,Wanging'ombe,Wanging'ombe DC
+Pwani,Bagamoyo,Bagamoyo DC
+Pwani,Chalinze,Chalinze DC
+Pwani,Kibaha,Kibaha DC
+Pwani,Kibaha Urban,Kibaha TC
+Pwani,Kibiti,Kibiti DC
+Pwani,Kisarawe,Kisarawe DC
+Pwani,Mafia,Mafia DC
+Pwani,Mkuranga,Mkuranga DC
+Pwani,Rufiji,Rufiji DC
+Rukwa,Kalambo,Kalambo DC
+Rukwa,Nkasi,Nkasi DC
+Rukwa,Sumbawanga,Sumbawanga DC
+Rukwa,Sumbawanga Urban,Sumbawanga MC
+Ruvuma,Madaba,Madaba DC
+Ruvuma,Mbinga,Mbinga DC
+Ruvuma,Mbinga TC,Mbinga TC
+Ruvuma,Namtumbo,Namtumbo DC
+Ruvuma,Nyasa,Nyasa DC
+Ruvuma,Songea DC,Songea DC
+Ruvuma,Songea Urban,Songea MC
+Ruvuma,Tunduru,Tunduru DC
+Shinyanga,Kahama TC,Kahama TC
+Shinyanga,Kishapu,Kishapu DC
+Shinyanga,Msalala,Msalala DC
+Shinyanga,Shinyanga,Shinyanga DC
+Shinyanga,Shinyanga Urban,Shinyanga MC
+Shinyanga,Ushetu,Ushetu DC
+Simiyu,Bariadi DC,Bariadi DC
+Simiyu,Bariadi TC,Bariadi TC
+Simiyu,Busega,Busega DC
+Simiyu,Itilima,Itilima DC
+Simiyu,Maswa,Maswa DC
+Simiyu,Meatu,Meatu DC
+Singida,Ikungi,Ikungi DC
+Singida,Iramba,Iramba DC
+Singida,Itigi,Itigi DC
+Singida,Manyoni,Manyoni DC
+Singida,Mkalama,Mkalama DC
+Singida,Singida,Singida DC
+Singida,Singida Urban,Singida MC
+Songwe,Ileje,Ileje DC
+Songwe,Mbozi,Mbozi DC
+Songwe,Momba,Momba DC
+Songwe,Songwe,Songwe DC
+Songwe,Tunduma,Tunduma TC
+Tabora,Igunga,Igunga DC
+Tabora,Kaliua,Kaliua DC
+Tabora,Nzega,Nzega DC
+Tabora,Nzega TC,Nzega TC
+Tabora,Sikonge,Sikonge DC
+Tabora,Tabora Urban,Tabora MC
+Tabora,Urambo,Urambo DC
+Tabora,Uyui,Uyui DC
+Tanga,Bumbuli,Bumbuli DC
+Tanga,Handeni,Handeni DC
+Tanga,Handeni Mjini,Handeni TC
+Tanga,Kilindi,Kilindi DC
+Tanga,Korogwe,Korogwe DC
+Tanga,Korogwe Township Authority,Korogwe TC
+Tanga,Lushoto,Lushoto DC
+Tanga,Mkinga,Mkinga DC
+Tanga,Muheza,Muheza DC
+Tanga,Pangani,Pangani DC
+Tanga,Tanga Urban,Tanga CC

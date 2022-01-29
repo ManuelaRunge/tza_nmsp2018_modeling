@@ -1,0 +1,185 @@
+District,Zone,Region,Population_2016,MIS_UMRC,Setting,Strata,Strata_withoutUrban,MISreg_CMeffectiveCoverage_2016
+Arusha,Northern,Arusha,356750.1186,campaign after survey,Rural,very low,Very low,48.342
+Arusha Urban,Northern,Arusha,466891.5593,campaign after survey,Urban,urban,Very low,48.342
+Babati,Central,Manyara,359864.4327,campaign after survey,Rural,very low,Very low,41.694
+Babati Urban,Central,Manyara,96888.55816,campaign after survey,Mixed,very low,Very low,41.694
+Bagamoyo,Eastern,Pwani,110344.6753,campaign after survey,Rural,moderate,moderate,50.466
+Bahi,Central,Dodoma,240857.9064,campaign after survey,Rural,moderate,moderate,40.098
+Bariadi DC,Lake,Simiyu,303882.1475,campaign before survey,Rural,high,high,50.346
+Bariadi TC,Lake,Simiyu,157496.7205,campaign before survey,Mixed,moderate,moderate,50.346
+Biharamulo,Lake,Kagera,425611.5187,campaign before survey,Rural,high,high,50.184
+Buchosa DC,Lake,Mwanza,366047.702,campaign before survey,Rural,high,high,46.068
+Buhigwe,Western,Kigoma,285154.0742,campaign before survey,Rural,high,high,39.948
+Bukoba,Lake,Kagera,311125.1434,campaign before survey,Rural,high,high,50.184
+Bukoba Urban,Lake,Kagera,154770.8266,campaign before survey,Urban,urban,low,50.184
+Bukombe,Lake,Geita,229066.6337,campaign before survey,Rural,moderate,moderate,52.332
+Bumbuli,Northern,Tanga,170493.7197,campaign after survey,Rural,very low,Very low,49.122
+Bunda DC,Lake,Mara,371290.0607,campaign before survey,Rural,high,high,48.492
+Bunda TC,Lake,Mara,148463.4991,campaign before survey,Mixed,moderate,moderate,48.492
+Busega,Lake,Simiyu,218656.5475,campaign before survey,Rural,moderate,moderate,50.346
+Busokelo,Southwest Highlands,Mbeya,104179.0299,campaign after survey,Rural,high,high,49.188
+Butiama,Lake,Mara,263716.7582,campaign before survey,Rural,high,high,48.492
+Chalinze,Eastern,Pwani,241886.0136,campaign after survey,Rural,moderate,moderate,50.466
+Chamwino,Central,Dodoma,367713.6391,campaign after survey,Rural,low,low,40.098
+Chato,Lake,Geita,410953.6553,campaign before survey,Rural,high,high,52.332
+Chemba,Central,Dodoma,255141.1669,campaign after survey,Rural,low,low,40.098
+Chunya,Southwest Highlands,Mbeya,179221.2225,campaign after survey,Rural,moderate,moderate,49.188
+Dodoma Urban,Central,Dodoma,571629.4912,campaign after survey,Urban,urban,low,40.098
+Gairo,Eastern,Morogoro,218080.4436,campaign after survey,Rural,low,low,44.868
+Geita,Lake,Geita,692088.8734,campaign before survey,Rural,high,high,52.332
+Geita Town,Lake,Geita,216893.4262,campaign before survey,Mixed,moderate,moderate,52.332
+Hai,Northern,Kilimanjaro,229680.3082,campaign after survey,Rural,very low,Very low,35.226
+Hanang,Central,Manyara,310629.1765,campaign after survey,Rural,very low,Very low,41.694
+Handeni,Northern,Tanga,134166.9393,campaign after survey,Rural,high,high,49.122
+Handeni Mjini,Northern,Tanga,184519.3774,campaign after survey,Mixed,high,high,49.122
+Ifakara,Eastern,Morogoro,117014.4255,campaign after survey,Mixed,moderate,moderate,44.868
+Igunga,Western,Tabora,434376.6309,campaign before survey,Rural,moderate,moderate,45.45
+Ikungi,Central,Singida,302473.1725,campaign after survey,Rural,low,low,54.234
+Ilala,Eastern,Daressalaam,1570274.979,campaign after survey,Urban,urban,low,50.544
+Ileje,Southwest Highlands,Songwe,130533.0364,campaign after survey,Rural,low,low,55.47
+Ilemela,Lake,Mwanza,380088.5871,campaign before survey,Urban,urban,moderate,46.068
+Iramba,Central,Singida,314374.8272,campaign after survey,Rural,low,low,54.234
+Iringa,Southern Highlands,Iringa,258120.9642,campaign after survey,Rural,low,low,49.776
+Iringa Urban,Southern Highlands,Iringa,173671.8685,campaign after survey,Urban,urban,low,49.776
+Itigi,Central,Singida,130172.2469,campaign after survey,Rural,moderate,moderate,54.234
+Itilima,Lake,Simiyu,335795.6976,campaign before survey,Rural,moderate,moderate,50.346
+Kahama TC,Lake,Shinyanga,284440.4792,campaign before survey,Mixed,moderate,moderate,44.748
+Kakonko,Western,Kigoma,167555,campaign before survey,Rural,high,high,39.948
+Kalambo,Southwest Highlands,Rukwa,206043.3782,campaign after survey,Rural,moderate,moderate,51.372
+Kaliua,Western,Tabora,481782.4174,campaign before survey,Rural,high,high,45.45
+Karagwe,Lake,Kagera,403572.3851,campaign before survey,Rural,high,high,50.184
+Karatu,Northern,Arusha,255053.1041,campaign after survey,Rural,very low,Very low,48.342
+Kasulu,Western,Kigoma,527484.1033,campaign before survey,Rural,high,high,39.948
+Kasulu Township Authority,Western,Kigoma,257977.8005,campaign before survey,Mixed,moderate,moderate,39.948
+Kibaha,Eastern,Pwani,78104.23117,campaign after survey,Rural,high,high,50.466
+Kibaha Urban,Eastern,Pwani,156177.9671,campaign after survey,Mixed,moderate,moderate,50.466
+Kibiti,Eastern,Pwani,126118.3711,campaign after survey,Rural,high,high,50.466
+Kibondo,Western,Kigoma,285098.2251,campaign before survey,Rural,high,high,39.948
+Kigamboni,Eastern,Daressalaam,282816.6777,campaign after survey,Urban,urban,moderate,50.544
+Kigoma,Western,Kigoma,214116.2394,campaign before survey,Rural,high,high,39.948
+Kigoma Urban,Western,Kigoma,252055.3856,campaign before survey,Urban,urban,high,39.948
+Kilindi,Northern,Tanga,287871.9917,campaign after survey,Rural,high,high,49.122
+Kilolo,Southern Highlands,Iringa,224302.07,campaign after survey,Rural,low,low,49.776
+Kilombero,Eastern,Morogoro,331454.3773,campaign after survey,Rural,moderate,moderate,44.868
+Kilosa,Eastern,Morogoro,481778.5075,campaign after survey,Rural,moderate,moderate,44.868
+Kilwa,Southern,Lindi,199276.2345,SNP before survey,Rural,high,high,54.972
+Kinondoni,Eastern,Daressalaam,1125734.324,campaign after survey,Urban,urban,low,50.544
+Kisarawe,Eastern,Pwani,104058.3851,campaign after survey,Rural,high,high,50.466
+Kishapu,Lake,Shinyanga,287464.6987,campaign before survey,Rural,moderate,moderate,44.748
+Kiteto,Central,Manyara,294012.4179,campaign after survey,Rural,low,low,41.694
+Kondoa,Central,Dodoma,219812.1121,campaign after survey,Rural,low,low,40.098
+Kondoa TC,Central,Dodoma,73270.70404,campaign after survey,Mixed,very low,Very low,40.098
+Kongwa,Central,Dodoma,347524.4507,campaign after survey,Rural,low,low,40.098
+Korogwe,Northern,Tanga,256890.3111,campaign after survey,Rural,moderate,moderate,49.122
+Korogwe Township Authority,Northern,Tanga,75693.92279,campaign after survey,Mixed,moderate,moderate,49.122
+Kwimba,Lake,Mwanza,450463.5015,campaign before survey,Rural,moderate,moderate,46.068
+Kyela,Southwest Highlands,Mbeya,243530.8304,campaign after survey,Rural,moderate,moderate,49.188
+Kyerwa,Lake,Kagera,390209.1094,campaign before survey,Rural,high,high,50.184
+Lindi,Southern,Lindi,186492.9912,SNP before survey,Rural,high,high,54.972
+Lindi Urban,Southern,Lindi,101426.2935,SNP before survey,Urban,urban,high,54.972
+Liwale,Southern,Lindi,98912.65078,SNP before survey,Rural,high,high,54.972
+Longido,Northern,Arusha,144626.5125,campaign after survey,Rural,very low,Very low,48.342
+Ludewa,Southern Highlands,Njombe,135362.3111,campaign after survey,Rural,moderate,moderate,48.918
+Lushoto,Northern,Tanga,354227.9941,campaign after survey,Rural,low,low,49.122
+Madaba,Southern Highlands,Ruvuma,51369.58761,SNP before survey,Rural,moderate,moderate,42.144
+Mafia,Eastern,Pwani,49093.65058,campaign after survey,Rural,high,high,50.466
+Mafinga Township Authority,Southern Highlands,Iringa,61657.52505,campaign after survey,Mixed,very low,Very low,49.776
+Magu,Lake,Mwanza,324468.7818,campaign before survey,Rural,moderate,moderate,46.068
+Makambako Township Authority,Southern Highlands,Njombe,106013.8219,campaign after survey,Mixed,very low,Very low,48.918
+Makete,Southern Highlands,Njombe,94190.63934,campaign after survey,Rural,very low,Very low,48.918
+Malinyi,Eastern,Morogoro,129536.6015,campaign after survey,Rural,high,high,44.868
+Manyoni,Central,Singida,213009.9723,campaign after survey,Rural,low,low,54.234
+Masasi,Southern,Mtwara,260112.6492,SNP before survey,Rural,high,high,47.292
+Masasi Township Authority,Southern,Mtwara,108997.7912,SNP before survey,Mixed,high,high,47.292
+Maswa,Lake,Simiyu,360942.7097,campaign before survey,Rural,moderate,moderate,50.346
+Mbarali,Southwest Highlands,Mbeya,331714.5385,campaign after survey,Rural,low,low,49.188
+Mbeya,Southwest Highlands,Mbeya,327902.6627,campaign after survey,Urban,urban,low,49.188
+Mbeya Urban,Southwest Highlands,Mbeya,445543.7579,campaign after survey,Rural,low,low,49.188
+Mbinga,Southern Highlands,Ruvuma,254420.2577,SNP before survey,Rural,moderate,moderate,42.144
+Mbinga TC,Southern Highlands,Ruvuma,126918.4775,SNP before survey,Mixed,moderate,moderate,42.144
+Mbogwe,Lake,Geita,199409.0956,campaign before survey,Rural,high,high,52.332
+Mbozi,Southwest Highlands,Songwe,492674.7418,campaign after survey,Rural,very low,Very low,55.47
+Mbulu,Central,Manyara,215613.7227,campaign after survey,Rural,very low,Very low,41.694
+Mbulu TC,Central,Manyara,144863.1134,campaign after survey,Mixed,very low,Very low,41.694
+Meatu,Lake,Simiyu,323047.2781,campaign before survey,Rural,moderate,moderate,50.346
+Meru,Northern,Arusha,284598.2679,campaign after survey,Rural,very low,Very low,48.342
+Missenyi,Lake,Kagera,226297.8822,campaign before survey,Rural,high,high,50.184
+Misungwi,Lake,Mwanza,398819.4239,campaign before survey,Rural,high,high,46.068
+Mkalama,Central,Singida,167083.9679,campaign after survey,Rural,low,low,54.234
+Mkinga,Northern,Tanga,128299.2566,campaign after survey,Rural,moderate,moderate,49.122
+Mkuranga,Eastern,Pwani,239409.8941,campaign after survey,Rural,high,high,50.466
+Mlele,Southwest Highlands,Katavi,61807.42696,campaign before survey,Rural,high,high,53.91
+Momba,Southwest Highlands,Songwe,244748.7527,campaign after survey,Rural,moderate,moderate,55.47
+Monduli,Northern,Arusha,188079.0335,campaign after survey,Rural,very low,Very low,48.342
+Morogoro,Eastern,Morogoro,295518.4426,campaign after survey,Rural,high,high,44.868
+Morogoro Urban,Eastern,Morogoro,359669.9601,campaign after survey,Urban,urban,moderate,44.868
+Moshi,Northern,Kilimanjaro,495377.6395,campaign after survey,Rural,very low,Very low,35.226
+Moshi Urban,Northern,Kilimanjaro,203423.8852,campaign after survey,Urban,urban,low,35.226
+Mpanda,Southwest Highlands,Katavi,226155.0727,campaign before survey,Rural,moderate,moderate,53.91
+Mpanda Urban,Southwest Highlands,Katavi,129739.6618,campaign before survey,Urban,urban,moderate,53.91
+Mpimbwe,Southwest Highlands,Katavi,85003.56345,campaign before survey,Rural,low,low,53.91
+Mpwapwa,Central,Dodoma,339360.5427,campaign after survey,Rural,moderate,moderate,40.098
+Msalala,Lake,Shinyanga,270332.2383,campaign before survey,Rural,high,high,44.748
+Mtwara DC,Southern,Mtwara,139271.0453,SNP before survey,Rural,high,high,47.292
+Mtwara Urban,Southern,Mtwara,115398.2647,SNP before survey,Urban,urban,high,47.292
+Mufindi,Southern Highlands,Iringa,273350.7311,campaign after survey,Rural,low,low,49.776
+Muheza,Northern,Tanga,213606.8142,campaign after survey,Rural,high,high,49.122
+Muleba,Lake,Kagera,617625.4176,campaign before survey,Rural,high,high,50.184
+Musoma,Lake,Mara,198412.7143,campaign before survey,Rural,high,high,48.492
+Musoma Urban,Lake,Mara,146543.6143,campaign before survey,Urban,urban,moderate,48.492
+Mvomero,Eastern,Morogoro,336513.9158,campaign after survey,Rural,moderate,moderate,44.868
+Mwanga,Northern,Kilimanjaro,138411.4251,campaign after survey,Rural,very low,Very low,35.226
+Nachingwea,Southern,Lindi,185710.354,SNP before survey,Rural,high,high,54.972
+Namtumbo,Southern Highlands,Ruvuma,213170.1324,SNP before survey,Rural,high,high,42.144
+Nanyamba TC,Southern,Mtwara,98930.83411,SNP before survey,Mixed,high,high,47.292
+Nanyumbu,Southern,Mtwara,159484.0614,SNP before survey,Rural,high,high,47.292
+Newala DC,Southern,Mtwara,134115.2961,SNP before survey,Rural,high,high,47.292
+Newala TC,Southern,Mtwara,80568.6361,SNP before survey,Mixed,moderate,moderate,47.292
+Ngara,Lake,Kagera,314965.7475,campaign before survey,Rural,high,high,50.184
+Ngorongoro,Northern,Arusha,196151.4244,campaign after survey,Rural,very low,Very low,48.342
+Njombe,Southern Highlands,Njombe,86435.03667,campaign after survey,Rural,low,low,48.918
+Njombe Urban,Southern Highlands,Njombe,137670.0646,campaign after survey,Mixed,very low,Very low,48.918
+Nkasi,Southwest Highlands,Rukwa,316493.0774,campaign after survey,Rural,moderate,moderate,51.372
+Nsimbo,Southwest Highlands,Katavi,145504.4519,campaign before survey,Rural,high,high,53.91
+Nyamagana,Lake,Mwanza,450253.2969,campaign before survey,Urban,urban,low,46.068
+Nyang'wale,Lake,Geita,164999.068,campaign before survey,Rural,high,high,52.332
+Nyasa,Southern Highlands,Ruvuma,162596.169,SNP before survey,Rural,high,high,42.144
+Nzega,Western,Tabora,461149.8575,campaign before survey,Rural,high,high,45.45
+Nzega TC,Western,Tabora,80375.01759,campaign before survey,Mixed,high,high,45.45
+Pangani,Northern,Tanga,58708.06196,campaign after survey,Rural,moderate,moderate,49.122
+Rombo,Northern,Kilimanjaro,267282.7058,campaign after survey,Rural,very low,Very low,35.226
+Rorya,Lake,Mara,287105.3886,campaign before survey,Rural,high,high,48.492
+Ruangwa,Southern,Lindi,134254.3467,SNP before survey,Rural,high,high,54.972
+Rufiji,Eastern,Pwani,97303.4781,campaign after survey,Rural,high,high,50.466
+Rungwe,Southwest Highlands,Mbeya,248749.1044,campaign after survey,Rural,low,low,49.188
+Same,Northern,Kilimanjaro,296655.9338,campaign after survey,Rural,low,low,35.226
+Sengerema DC,Lake,Mwanza,740471.3472,campaign before survey,Rural,high,high,46.068
+Serengeti,Lake,Mara,286215.1868,campaign before survey,Rural,high,high,48.492
+Shinyanga,Lake,Shinyanga,360566.2579,campaign before survey,Rural,high,high,44.748
+Shinyanga Urban,Lake,Shinyanga,173328.678,campaign before survey,Urban,urban,moderate,44.748
+Siha,Northern,Kilimanjaro,129392.7764,campaign after survey,Rural,very low,Very low,35.226
+Sikonge,Western,Tabora,202459.9013,campaign before survey,Rural,high,high,45.45
+Simanjiro,Central,Manyara,196475.0313,campaign after survey,Rural,low,low,41.694
+Singida,Central,Singida,241251.9322,campaign after survey,Rural,very low,Very low,54.234
+Singida Urban,Central,Singida,167289.6093,campaign after survey,Urban,urban,Very low,54.234
+Songea DC,Southern Highlands,Ruvuma,129509.242,SNP before survey,Rural,high,high,42.144
+Songea Urban,Southern Highlands,Ruvuma,241523.0581,SNP before survey,Urban,urban,moderate,42.144
+Songwe,Southwest Highlands,Songwe,152822.5969,campaign after survey,Rural,moderate,moderate,55.47
+Sumbawanga,Southwest Highlands,Rukwa,393460.5875,campaign after survey,Rural,low,low,51.372
+Sumbawanga Urban,Southwest Highlands,Rukwa,241674.0471,campaign after survey,Urban,urban,low,51.372
+Tabora Urban,Western,Tabora,244748.8614,campaign before survey,Urban,urban,high,45.45
+Tandahimba,Southern,Mtwara,237691.0058,SNP before survey,Rural,high,high,47.292
+Tanga Urban,Northern,Tanga,286689.9898,campaign after survey,Urban,urban,moderate,49.122
+Tarime,Lake,Mara,285343.6881,campaign before survey,Rural,high,high,48.492
+Tarime TC,Lake,Mara,85134.21748,campaign before survey,Mixed,moderate,moderate,48.492
+Temeke,Eastern,Daressalaam,1432358.04,campaign after survey,Urban,urban,low,50.544
+Tunduma,Southwest Highlands,Songwe,124570.0827,campaign after survey,Mixed,very low,Very low,55.47
+Tunduru,Southern Highlands,Ruvuma,321602.4988,SNP before survey,Rural,high,high,42.144
+Ubungo MC,Eastern,Daressalaam,1023641.2,campaign after survey,Urban,urban,low,50.544
+Ukerewe,Lake,Mwanza,385457.5543,campaign before survey,Rural,high,high,46.068
+Ulanga,Eastern,Morogoro,171276.8285,campaign after survey,Rural,high,high,44.868
+Urambo,Western,Tabora,222076.8304,campaign before survey,Rural,high,high,45.45
+Ushetu,Lake,Shinyanga,294427.7081,campaign before survey,Rural,high,high,44.748
+Uvinza,Western,Kigoma,431790.1999,campaign before survey,Rural,high,high,39.948
+Uyui,Western,Tabora,453377.5906,campaign before survey,Rural,high,high,45.45
+Wanging'ombe,Southern Highlands,Njombe,165734.6763,campaign after survey,Rural,very low,Very low,48.918
